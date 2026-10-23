@@ -29,9 +29,15 @@ Also: start streaming on real amplitude (peak > 150), not on "any non-zero byte"
 speaker; each joins the live stream with a 1.5 s cushion so speakers connecting at different times stay in the same place in the
 audio. Separate sessions are not clock-synced (expect small offsets, so fine for different rooms, not for one room).
 
+## Sonos fix (found via postlund/pyatv#2915)
+Sonos accepts pyatv's AirPlay 2 raw-PCM setup (ct 1, audioFormat 0x800), shows "playing" and plays silence. Setting the stream up as
+ALAC (ct 2, audioFormat 0x40000) and wrapping each packet in an uncompressed ALAC frame before encryption makes it play (confirmed
+by ear on a Sonos Bookshelf). `bridge/alac_patch.py` does this by patching pyatv's `AirPlayV2`; the bridge enables it per session for
+Sonos (manufacturer property) or `--alac NAME`. The Harman Kardon keeps the stock PCM path.
+
 ## Speaker results
 - Harman Kardon Citation One: works (see stage0-findings.md).
-- Sonos Bookshelf ("Kitchen", AirPlay 2, acl=0, transient pairing): accepts the session (200 OK on pair-setup, SETUP x2, RECORD,
+- Sonos Bookshelf ("Kitchen", AirPlay 2, acl=0, transient pairing): raw PCM (stock pyatv) - accepts the session (200 OK on pair-setup, SETUP x2, RECORD,
   FLUSH; /feedback reports the type-96 stream at 44.1 kHz) but plays nothing - also with the stock pyatv `stream_file` test tone from a
   Mac, at volumes 25-60, and with full metadata (title/artist/album/artwork/duration, tools/meta_test.py). So not a bridge bug and
   not (only) missing metadata. Sonos community reports realtime (non-buffered) AirPlay 2 streams are

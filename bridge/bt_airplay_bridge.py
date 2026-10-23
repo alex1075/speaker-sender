@@ -22,9 +22,12 @@ import time
 
 import pyatv
 import pyatv.protocols.raop as raop
+from pyatv.const import Protocol
 from pyatv.interface import MediaMetadata
 from pyatv.protocols.raop.audio_source import AudioSource
 from pyatv.storage.memory_storage import MemoryStorage
+
+import alac_patch
 
 RATE, CHANNELS, SAMPLE_BYTES = 44100, 2, 2
 FRAME_BYTES = CHANNELS * SAMPLE_BYTES
@@ -197,6 +200,12 @@ async def stream_session(args, proc, first_chunk):
 
     async def stream_one(name, volume, conf, storage):
         try:
+            svc = conf.get_service(Protocol.AirPlay)
+            maker = (svc.properties.get("manufacturer") or "") if svc else ""
+            use_alac = name in args.alac or maker.lower() == "sonos"  # Sonos plays silence for raw PCM (pyatv#2915)
+            alac_patch.set_alac(use_alac)  # per task; read when this session's stream is set up
+            if use_alac:
+                log.info("%s: using ALAC (%s)", name, maker or "forced")
             atv = await pyatv.connect(conf, loop, storage=storage)
             try:
                 await atv.audio.set_volume(volume)
@@ -208,6 +217,7 @@ async def stream_session(args, proc, first_chunk):
         except Exception as exc:  # one speaker failing must not stop the others
             log.error("%s: %s: %s", name, type(exc).__name__, exc)
 
+    alac_patch.install()
     storage = MemoryStorage()
     await storage.load()
     try:
@@ -240,6 +250,8 @@ if __name__ == "__main__":
     ap.add_argument("--target", required=True, action="append",
                     help='AirPlay speaker name, exactly as shown by tools/scan.py; repeat for several speakers; '
                          'append =N for a per-speaker volume, e.g. --target "Kitchen=25"')
+    ap.add_argument("--alac", action="append", default=[], metavar="NAME",
+                    help="force AirPlay 2 ALAC for this speaker (repeatable); Sonos speakers use it automatically")
     ap.add_argument("--volume", type=float, default=30.0, help="default speaker volume 0-100 (default 30)")
     ap.add_argument("--idle", type=float, default=60.0, help="seconds of digital silence before disconnecting")
     ap.add_argument("--max-buffer", type=float, default=4.0, help="max seconds of captured audio held; covers the ~5-6 s AirPlay connect time (latency cap)")
