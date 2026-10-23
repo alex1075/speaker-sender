@@ -17,6 +17,7 @@ import argparse
 import array
 import asyncio
 import logging
+import signal
 import sys
 import time
 
@@ -268,7 +269,16 @@ if __name__ == "__main__":
         except ValueError:  # the "=" belongs to the name
             a.targets.append((t, a.volume))
     logging.basicConfig(level=logging.DEBUG if a.verbose else logging.INFO, format="%(asctime)s %(name)s: %(message)s")
+    async def runner():
+        # SIGTERM/SIGINT cancel the main task so the finally blocks kill the capture child; otherwise an orphaned
+        # capture (e.g. the ssh to the Pi) keeps the audio channel busy and the restarted bridge hears nothing.
+        loop = asyncio.get_running_loop()
+        task = asyncio.current_task()
+        for sig in (signal.SIGTERM, signal.SIGINT):
+            loop.add_signal_handler(sig, task.cancel)
+        await main(a)
+
     try:
-        asyncio.run(main(a))
-    except KeyboardInterrupt:
+        asyncio.run(runner())
+    except (KeyboardInterrupt, asyncio.CancelledError):
         sys.exit(0)

@@ -43,3 +43,16 @@ Sonos (manufacturer property) or `--alac NAME`. The Harman Kardon keeps the stoc
   not (only) missing metadata. Sonos community reports realtime (non-buffered) AirPlay 2 streams are
   unreliable on Sonos (anecdotal, 2023): https://en.community.sonos.com/speakers-229128/airplay2-realitime-audio-6880588
 - Bedroom HomePod: stock test tone accepted; audibility not confirmed.
+
+## Split setup: Pi = Bluetooth receiver, iona = AirPlay sender (2026-10-23)
+Measured on the Pi Zero W: `import pyatv` 24 s, 3072-bit modexp 0.18-0.37 s, ChaCha20-Poly1305 176 us/packet (~2 % of a core per
+stream), byteswap 79 us/packet (~1 %). So the crypto is cheap and a C rewrite would not help; interpreter start-up and a single slow
+core are the limits. ALAC wrapping is 8 us/packet on iona (0.1 % of a core). Moving the AirPlay work to a 4-core x86 box fixes it.
+
+- Pi: Bluetooth sink only. iona pulls the raw capture with `bridge/iona/capture-from-pi.sh` over SSH using a capture-only key
+  (Pi `authorized_keys`: `restrict,command="arecord ..."`; no shell, tty or forwarding).
+- iona: `bridge/iona/run-bridge.sh` (Office, Kitchen/Sonos via ALAC, Bedroom HomePod): all three play the turntable, no "too slow".
+- Gotcha: killing the bridge must also kill its capture ssh, otherwise the orphan keeps the Pi's audio channel busy and the next
+  bridge hears nothing. The bridge now handles SIGTERM/SIGINT by cancelling its main task (finally blocks kill the capture).
+- Service on iona: `bridge/iona/airplay-bridge.service` (user unit, install by hand into ~/.config/systemd/user). Lingering is
+  off, so an administrator must run `loginctl enable-linger <user>` once for it to start at boot without a login.
