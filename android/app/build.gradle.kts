@@ -18,9 +18,11 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions { jvmTarget = "17" }
+    testOptions { unitTests.isReturnDefaultValues = true }
 }
 
 dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
     implementation("org.bouncycastle:bcprov-jdk18on:1.78.1") // SRP-6a, HKDF, ChaCha20-Poly1305
+    testImplementation("junit:junit:4.13.2")
 }
