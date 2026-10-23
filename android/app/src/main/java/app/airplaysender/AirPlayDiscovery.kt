@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.callbackFlow
 
 data class Speaker(val name: String, val host: String, val port: Int, val txt: Map<String, String>)
 
-/** Browses `_raop._tcp`. Instance names look like `204EF66480F3@office speaker`. Untested scaffold. */
+/** Browses `_raop._tcp`. Instance names look like `204EF66480F3@Speaker1 speaker`. Untested scaffold. */
 class AirPlayDiscovery(context: Context) {
     private val nsd = context.getSystemService(Context.NSD_SERVICE) as NsdManager
 

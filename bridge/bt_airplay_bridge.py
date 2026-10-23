@@ -5,8 +5,8 @@ A phone/turntable pairs with this Pi as a Bluetooth speaker. When audio starts, 
 chosen AirPlay speaker and streams the live PCM; when the audio has been silent for --idle seconds it
 disconnects again and waits for the next session.
 
-  python bt_airplay_bridge.py --target "office speaker" --volume 30
-  python bt_airplay_bridge.py --target "Kitchen=25" --target "office speaker=30"   # several speakers
+  python bt_airplay_bridge.py --target "Speaker1" --volume 30
+  python bt_airplay_bridge.py --target "Speaker2=25" --target "Speaker1=30"   # several speakers
 
 Notes
 - pyatv ends a stream once its source returns empty frames, so LiveSource always returns a full packet
@@ -250,7 +250,7 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--target", required=True, action="append",
                     help='AirPlay speaker name, exactly as shown by tools/scan.py; repeat for several speakers; '
-                         'append =N for a per-speaker volume, e.g. --target "Kitchen=25"')
+                         'append =N for a per-speaker volume, e.g. --target "Speaker2=25"')
     ap.add_argument("--alac", action="append", default=[], metavar="NAME",
                     help="force AirPlay 2 ALAC for this speaker (repeatable); Sonos speakers use it automatically")
     ap.add_argument("--volume", type=float, default=30.0, help="default speaker volume 0-100 (default 30)")

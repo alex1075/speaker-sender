@@ -209,6 +209,26 @@ int main(int argc, char **argv)
         if (ap_debug >= 1 && !do_list)
             AP_LOG("scanning for speakers (%d ms)...", scan_ms);
         ndev = mdns_scan(devs, 64, scan_ms);
+        /* mDNS is lossy: when a named target is missing, scan again (up to twice) before giving up */
+        for (int attempt = 0; attempt < 2 && !do_list; attempt++) {
+            int missing = 0;
+            for (int i = 0; i < nreq; i++) {
+                char h[64];
+                int p;
+                if (!name_is_hostport(reqs[i].spec, h, sizeof(h), &p)) {
+                    int m = mdns_match(devs, ndev, reqs[i].spec);
+                    if (m < 0 && m != -2)
+                        missing = 1;
+                    else if (m >= 0 && !devs[m].has_addr)
+                        missing = 1;
+                }
+            }
+            if (!missing)
+                break;
+            if (ap_debug >= 1)
+                AP_LOG("speaker not found yet, scanning again...");
+            ndev = mdns_scan(devs, 64, scan_ms);
+        }
     }
     if (do_list) {
         list_devices(devs, ndev);

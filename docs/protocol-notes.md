@@ -4,7 +4,7 @@ Everything below was observed in pyatv 0.18.0 debug logs and read from its sourc
 non-Apple sender used to play audio on a speaker that needs no PIN. Source paths are inside the `pyatv` package.
 
 ## 1. Discovery (mDNS)
-- `_raop._tcp` instance name is `<DEVICEID>@<name>` (e.g. `204EF66480F3@office speaker`); TXT has `cn` (codecs), `et` (encryption types), `ft` (features), `sf`, `pk`.
+- `_raop._tcp` instance name is `<DEVICEID>@<name>` (e.g. `204EF66480F3@Speaker1`); TXT has `cn` (codecs), `et` (encryption types), `ft` (features), `sf`, `pk`.
 - `_airplay._tcp` advertises the AirPlay 2 `features`. Same port as RAOP on this speaker.
 
 ## 2. Control connection (TCP, RTSP/1.0 + HTTP/1.1 on the same socket)

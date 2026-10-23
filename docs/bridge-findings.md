@@ -1,7 +1,7 @@
 # Bluetooth -> AirPlay bridge: findings (2026-10-23)
 
 Sony PS-LX310BT turntable -> Raspberry Pi Zero W (BlueALSA A2DP sink) -> pyatv -> Harman Kardon Citation One
-("office speaker"). Confirmed by ear: clear music end to end.
+(Harman Kardon Citation One). Confirmed by ear: clear music end to end.
 
 ## Bugs that produced "static" (all three were mine)
 1. **Byte order.** AirPlay raw PCM is big-endian. `arecord` gives little-endian. pyatv's own file source calls
@@ -25,7 +25,7 @@ Also: start streaming on real amplitude (peak > 150), not on "any non-zero byte"
 - One unexplained reboot during testing; `vcgencmd get_throttled` was 0x0 afterwards.
 
 ## Multi-speaker
-`--target` is repeatable (`--target "Kitchen=25" --target "office speaker=30"`). One capture is fanned out to one pyatv session per
+`--target` is repeatable (`--target "Speaker2=25" --target "Speaker1=30"`). One capture is fanned out to one pyatv session per
 speaker; each joins the live stream with a 1.5 s cushion so speakers connecting at different times stay in the same place in the
 audio. Separate sessions are not clock-synced (expect small offsets, so fine for different rooms, not for one room).
 
@@ -37,12 +37,12 @@ Sonos (manufacturer property) or `--alac NAME`. The Harman Kardon keeps the stoc
 
 ## Speaker results
 - Harman Kardon Citation One: works (see stage0-findings.md).
-- Sonos Bookshelf ("Kitchen", AirPlay 2, acl=0, transient pairing): raw PCM (stock pyatv) - accepts the session (200 OK on pair-setup, SETUP x2, RECORD,
+- Sonos Bookshelf (AirPlay 2, acl=0, transient pairing): raw PCM (stock pyatv) - accepts the session (200 OK on pair-setup, SETUP x2, RECORD,
   FLUSH; /feedback reports the type-96 stream at 44.1 kHz) but plays nothing - also with the stock pyatv `stream_file` test tone from a
   Mac, at volumes 25-60, and with full metadata (title/artist/album/artwork/duration, tools/meta_test.py). So not a bridge bug and
   not (only) missing metadata. Sonos community reports realtime (non-buffered) AirPlay 2 streams are
   unreliable on Sonos (anecdotal, 2023): https://en.community.sonos.com/speakers-229128/airplay2-realitime-audio-6880588
-- Bedroom HomePod: stock test tone accepted; audibility not confirmed.
+- HomePod: stock test tone accepted; audibility not confirmed.
 
 ## Split setup: Pi = Bluetooth receiver, iona = AirPlay sender (2026-10-23)
 Measured on the Pi Zero W: `import pyatv` 24 s, 3072-bit modexp 0.18-0.37 s, ChaCha20-Poly1305 176 us/packet (~2 % of a core per
@@ -51,7 +51,7 @@ core are the limits. ALAC wrapping is 8 us/packet on iona (0.1 % of a core). Mov
 
 - Pi: Bluetooth sink only. iona pulls the raw capture with `bridge/iona/capture-from-pi.sh` over SSH using a capture-only key
   (Pi `authorized_keys`: `restrict,command="arecord ..."`; no shell, tty or forwarding).
-- iona: `bridge/iona/run-bridge.sh` (Office, Kitchen/Sonos via ALAC, Bedroom HomePod): all three play the turntable, no "too slow".
+- iona: `bridge/iona/run-bridge.sh` (Harman Kardon, Sonos via ALAC, HomePod): all three play the turntable, no "too slow".
 - Gotcha: killing the bridge must also kill its capture ssh, otherwise the orphan keeps the Pi's audio channel busy and the next
   bridge hears nothing. The bridge now handles SIGTERM/SIGINT by cancelling its main task (finally blocks kill the capture).
 - Service on iona: `bridge/iona/airplay-bridge.service` (user unit, install by hand into ~/.config/systemd/user). Lingering is
