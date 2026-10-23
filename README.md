@@ -43,7 +43,7 @@ gradle -p android assembleDebug     # needs JDK 17 and Gradle >= 8.9; APK in and
 | Speaker | Model | Format | Result |
 |---|---|---|---|
 | Office | Harman Kardon Citation One | PCM | Audible. Needs the timing responder running before SETUP |
-| Kitchen | Sonos Bookshelf (Sonos Era-class, auto-detected) | ALAC | Audible. Needs volume and progress sent before RECORD/FLUSH |
+| Kitchen | Sonos Bookshelf (auto-detected from mDNS) | ALAC | Audible. Needs volume and progress sent before RECORD/FLUSH |
 | Bedroom | Apple HomePod (`AudioAccessory1,1`) | PCM | Audible (6 s tone at 50%) |
 | Living Room | Yamaha RX-V679 receiver | n/a | Not tested |
 
