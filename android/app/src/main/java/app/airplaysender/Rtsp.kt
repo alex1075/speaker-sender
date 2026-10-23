@@ -34,6 +34,7 @@ class RtspConnection(host: String, port: Int, timeoutMs: Int) : Closeable {
     val activeRemote: Long
     val sessionId: Long
     val localIp: String
+    val remoteAddress: InetAddress
     val uri: String
 
     init {
@@ -46,6 +47,7 @@ class RtspConnection(host: String, port: Int, timeoutMs: Int) : Closeable {
         input = socket.getInputStream()
         output = socket.getOutputStream()
         localIp = (socket.localAddress as Inet4Address).hostAddress ?: ""
+        remoteAddress = socket.inetAddress
         val rnd = ByteArray(16).also { SecureRandom().nextBytes(it) }
         sessionId = ByteBuffer.wrap(rnd, 0, 4).int.toLong() and 0xFFFFFFFFL
         activeRemote = ByteBuffer.wrap(rnd, 4, 4).int.toLong() and 0xFFFFFFFFL

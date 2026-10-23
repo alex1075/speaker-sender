@@ -23,6 +23,36 @@ object Srp {
     /** A = g^a mod N, padded to 384 bytes. `aPriv` is 32 random bytes. */
     fun clientPublic(aPriv: ByteArray): ByteArray = pad(G.modPow(BigInteger(1, aPriv), N))
 
+    /** Server state for the mock receiver: b, B = k*v + g^b, v = g^x. */
+    class Server(val user: String, val salt: ByteArray, val b: BigInteger, val B: BigInteger, val v: BigInteger)
+
+    /** Server half, for tests and the mock receiver. `bPriv` is 32 random bytes. */
+    fun serverStart(user: String, pass: String, salt: ByteArray, bPriv: ByteArray): Server {
+        val b = BigInteger(1, bPriv)
+        val v = G.modPow(xOf(user, pass, salt), N)
+        val bigB = MULT.multiply(v).add(G.modPow(b, N)).mod(N)
+        return Server(user, salt, b, bigB, v)
+    }
+
+    fun serverPublic(s: Server): ByteArray = pad(s.B)
+
+    /** Checks the client's A and M1. Returns K and M2 when M1 is right, otherwise null. */
+    fun serverVerify(s: Server, A: ByteArray, M1: ByteArray): Proof? {
+        if (A.isEmpty() || A.size > N_BYTES) return null
+        val aBig = BigInteger(1, A)
+        if (aBig.mod(N).signum() == 0) return null
+        val u = BigInteger(1, sha512(pad(aBig), pad(s.B)))
+        val S = s.v.modPow(u, N).multiply(aBig).mod(N).modPow(s.b, N)
+        val k = sha512(minBytes(S))
+        val expect = m1(s.user, s.salt, aBig, s.B, k)
+        if (!MessageDigest.isEqual(expect, M1)) return null
+        return Proof(expect, k, sha512(minBytes(aBig), expect, k))
+    }
+
+    /** x = H(salt | H(user ":" pass)) */
+    private fun xOf(user: String, pass: String, salt: ByteArray): BigInteger =
+        BigInteger(1, sha512(salt, sha512(user.toByteArray(), ":".toByteArray(), pass.toByteArray())))
+
     /** Returns null if B is 0 mod N, which SRP requires the client to refuse. */
     fun clientProof(user: String, pass: String, salt: ByteArray, aPriv: ByteArray, B: ByteArray): Proof? {
         if (B.isEmpty() || B.size > N_BYTES) return null
@@ -30,7 +60,7 @@ object Srp {
         if (bn.mod(N).signum() == 0) return null
         val a = BigInteger(1, aPriv)
         val aPub = G.modPow(a, N)
-        val x = BigInteger(1, sha512(salt, sha512(user.toByteArray(), ":".toByteArray(), pass.toByteArray())))
+        val x = xOf(user, pass, salt)
         val u = BigInteger(1, sha512(pad(aPub), pad(bn)))
         val v = G.modPow(x, N)
         val t = bn.subtract(MULT.multiply(v).mod(N)).mod(N)

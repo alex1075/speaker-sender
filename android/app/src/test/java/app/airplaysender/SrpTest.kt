@@ -20,6 +20,22 @@ class SrpTest {
         assertArrayEquals(Vectors.V_SRP_M1, proof.M1)
     }
 
+    // No golden vector covers the server side or M2, so this checks the two halves against each other.
+    @Test
+    fun serverAndClientAgreeAndWrongPinIsRefused() {
+        val salt = ByteArray(16) { it.toByte() }
+        val aPriv = ByteArray(32) { (it + 1).toByte() }
+        val server = Srp.serverStart("Pair-Setup", "3939", salt, ByteArray(32) { (it * 3 + 5).toByte() })
+        val b = Srp.serverPublic(server)
+        val a = Srp.clientPublic(aPriv)
+        val client = Srp.clientProof("Pair-Setup", "3939", salt, aPriv, b)!!
+        val side = Srp.serverVerify(server, a, client.M1)!!
+        assertArrayEquals(client.K, side.K)
+        assertArrayEquals(client.M2, side.M2)
+        val wrong = Srp.clientProof("Pair-Setup", "1234", salt, aPriv, b)!!
+        assertNull(Srp.serverVerify(server, a, wrong.M1))
+    }
+
     @Test
     fun refusesZeroModN() {
         val zero = ByteArray(Srp.N_BYTES)
