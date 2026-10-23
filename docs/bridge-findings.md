@@ -31,7 +31,9 @@ audio. Separate sessions are not clock-synced (expect small offsets, so fine for
 
 ## Speaker results
 - Harman Kardon Citation One: works (see stage0-findings.md).
-- Sonos Bookshelf ("Kitchen", AirPlay 2, acl=0, transient pairing): accepts the session, no sound - also with the stock pyatv
-  `stream_file` test tone from a Mac, so not a bridge bug. Sonos community reports realtime (non-buffered) AirPlay 2 streams are
+- Sonos Bookshelf ("Kitchen", AirPlay 2, acl=0, transient pairing): accepts the session (200 OK on pair-setup, SETUP x2, RECORD,
+  FLUSH; /feedback reports the type-96 stream at 44.1 kHz) but plays nothing - also with the stock pyatv `stream_file` test tone from a
+  Mac, at volumes 25-60, and with full metadata (title/artist/album/artwork/duration, tools/meta_test.py). So not a bridge bug and
+  not (only) missing metadata. Sonos community reports realtime (non-buffered) AirPlay 2 streams are
   unreliable on Sonos (anecdotal, 2023): https://en.community.sonos.com/speakers-229128/airplay2-realitime-audio-6880588
 - Bedroom HomePod: stock test tone accepted; audibility not confirmed.
