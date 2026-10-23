@@ -87,4 +87,4 @@ Pushing a tag such as `v0.1.0` (`.github/workflows/release.yml`) builds everythi
 
 ## AI Disclosure
 
-airplay-sender is designed, developed, and maintained by Alex Hunt. Anthropic's Claude AI was used as an assistant for parts of the implementation. All design decisions, protocol choices and the overall architecture are the author's own work. All AI generated content was reviewed, edited and tested by the author on real AirPlay speakers (Harman Kardon, Sonos, HomePod) and against reference implementations (pyatv, srptools, cryptography). The author remains responsible for the submitted implementations and their correctness.
+airplay-sender is designed, developed, and maintained by Alex Hunt. Anthropic's Claude AI was used as an assistant for parts of the implementation. All AI generated content was reviewed, edited and tested by the author on real AirPlay speakers (Harman Kardon, Sonos, HomePod) and against reference implementations (pyatv, srptools, cryptography). The author remains responsible for the submitted implementations and their correctness.
