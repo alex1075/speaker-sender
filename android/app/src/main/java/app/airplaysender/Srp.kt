@@ -24,7 +24,7 @@ object Srp {
     fun clientPublic(aPriv: ByteArray): ByteArray = pad(G.modPow(BigInteger(1, aPriv), N))
 
     /** Server state for the mock receiver: b, B = k*v + g^b, v = g^x. */
-    class Server(val user: String, val salt: ByteArray, val b: BigInteger, val B: BigInteger, val v: BigInteger)
+    class Server(val user: String, val salt: ByteArray, val bSecret: BigInteger, val bPub: BigInteger, val v: BigInteger)
 
     /** Server half, for tests and the mock receiver. `bPriv` is 32 random bytes. */
     fun serverStart(user: String, pass: String, salt: ByteArray, bPriv: ByteArray): Server {
@@ -34,17 +34,17 @@ object Srp {
         return Server(user, salt, b, bigB, v)
     }
 
-    fun serverPublic(s: Server): ByteArray = pad(s.B)
+    fun serverPublic(s: Server): ByteArray = pad(s.bPub)
 
     /** Checks the client's A and M1. Returns K and M2 when M1 is right, otherwise null. */
     fun serverVerify(s: Server, A: ByteArray, M1: ByteArray): Proof? {
         if (A.isEmpty() || A.size > N_BYTES) return null
         val aBig = BigInteger(1, A)
         if (aBig.mod(N).signum() == 0) return null
-        val u = BigInteger(1, sha512(pad(aBig), pad(s.B)))
-        val S = s.v.modPow(u, N).multiply(aBig).mod(N).modPow(s.b, N)
+        val u = BigInteger(1, sha512(pad(aBig), pad(s.bPub)))
+        val S = s.v.modPow(u, N).multiply(aBig).mod(N).modPow(s.bSecret, N)
         val k = sha512(minBytes(S))
-        val expect = m1(s.user, s.salt, aBig, s.B, k)
+        val expect = m1(s.user, s.salt, aBig, s.bPub, k)
         if (!MessageDigest.isEqual(expect, M1)) return null
         return Proof(expect, k, sha512(minBytes(aBig), expect, k))
     }
