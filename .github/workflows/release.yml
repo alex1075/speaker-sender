@@ -1,0 +1,106 @@
+name: release
+
+# Push a tag like v0.1.0: builds the static Linux/macOS airplay-send binaries and the Android APK,
+# and publishes them together as one GitHub release.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  linux:
+    strategy:
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            arch: x86_64
+          - runner: ubuntu-24.04-arm
+            arch: aarch64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build fully static binary (musl) and run the tests
+        run: |
+          docker run --rm -v "$PWD":/src -w /src/c alpine:3.20 sh -c '
+            apk add --no-cache build-base linux-headers openssl-dev openssl-libs-static git bash &&
+            git config --global --add safe.directory /src &&
+            make STATIC=full VERSION=${{ github.ref_name }} &&
+            make STATIC=full VERSION=${{ github.ref_name }} check &&
+            strip airplay-send'
+          ./c/airplay-send --version
+      - name: Package
+        run: |
+          name=airplay-send-${{ github.ref_name }}-linux-${{ matrix.arch }}
+          mkdir -p dist/$name
+          cp c/airplay-send c/README.md dist/$name/
+          tar -C dist -czf dist/$name.tar.gz $name
+          (cd dist && sha256sum $name.tar.gz > $name.tar.gz.sha256)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-${{ matrix.arch }}
+          path: dist/*.tar.gz*
+
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: brew install openssl@3
+      - name: Build (libcrypto linked statically) and test
+        working-directory: c
+        run: |
+          make STATIC=1 VERSION=${{ github.ref_name }}
+          make STATIC=1 VERSION=${{ github.ref_name }} check
+          strip airplay-send
+          ./airplay-send --version
+      - name: Package
+        run: |
+          name=airplay-send-${{ github.ref_name }}-macos-arm64
+          mkdir -p dist/$name
+          cp c/airplay-send c/README.md dist/$name/
+          tar -C dist -czf dist/$name.tar.gz $name
+          (cd dist && shasum -a 256 $name.tar.gz > $name.tar.gz.sha256)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-arm64
+          path: dist/*.tar.gz*
+
+  android:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Build debug-signed APK (install by sideloading)
+        run: |
+          gradle -p android assembleDebug --no-daemon
+          mkdir -p dist
+          cp android/app/build/outputs/apk/debug/app-debug.apk dist/airplay-sender-${{ github.ref_name }}-android-debug.apk
+          (cd dist && sha256sum *.apk > airplay-sender-${{ github.ref_name }}-android-debug.apk.sha256)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android
+          path: dist/*
+
+  publish:
+    needs: [linux, macos, android]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd dist && cat *.sha256 > SHA256SUMS && ls -l
+          gh release create "${{ github.ref_name }}" --repo "${{ github.repository }}" \
+            --title "${{ github.ref_name }}" --generate-notes *.tar.gz *.apk SHA256SUMS

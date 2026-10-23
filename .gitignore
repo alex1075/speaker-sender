@@ -1,2 +1,12 @@
 .venv/
 __pycache__/
+c/airplay-send
+c/**/*.o
+c/tests/test_unit
+c/tests/test_mock
+dist/
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+airplay-send/
