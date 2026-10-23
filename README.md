@@ -8,7 +8,7 @@ One repo, two products, one CI:
 |---|---|---|
 | `c/` | `airplay-send`, an AirPlay 1 and 2 command-line sender in plain C (Linux, macOS) | Working: verified on Harman Kardon Citation One, Sonos Bookshelf and HomePod |
 | `android/` | Android app (Kotlin, AudioPlaybackCapture foreground service) | Scaffold, handshake port not done yet |
-| `bridge/` | Python bridge (pyatv) used for the Pi/turntable setup | Working |
+| `bridge/` | Bluetooth A2DP to AirPlay bridge (Pi receiver + pyatv sender), see below | Working: turntable to three speakers |
 | `docs/` | Protocol notes | |
 
 ## Get the Linux/macOS tool
@@ -29,6 +29,20 @@ make && make check
 ```
 
 Usage and protocol details: [`c/README.md`](c/README.md).
+
+## Bluetooth bridge (`bridge/`)
+
+For sources that cannot speak AirPlay at all, such as a Bluetooth turntable. Audio goes
+source -> Bluetooth A2DP -> Raspberry Pi Zero W -> AirPlay speakers:
+
+1. The Pi is an A2DP sink (BlueALSA) with an open pairing window only when asked (`bt-pair-mode`).
+2. A second machine (a 4-core box; the Pi Zero is too slow for Python AirPlay) pulls the raw PCM over SSH with a capture-only key.
+3. `bt_airplay_bridge.py` (Python, pyatv) streams it live to one or more speakers: `--target "Speaker1=30" --target "Speaker2=40"`.
+   Sonos gets ALAC frames (`alac_patch.py`), the others raw PCM. Start of playback is triggered by real signal level, not idle hiss.
+
+Verified with a Sony PS-LX310BT turntable playing on Harman Kardon, Sonos and HomePod at once. Setup, systemd units and the
+byte-order, frame-alignment and Sonos findings are in [`docs/bridge-findings.md`](docs/bridge-findings.md). The C tool in `c/`
+replaces the Python sender where a pipe of PCM is enough; the bridge is the Bluetooth-to-PCM part.
 
 ## Get the Android app
 
