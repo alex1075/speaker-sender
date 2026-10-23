@@ -1,5 +1,17 @@
 # Stage 0 findings (2026-10-23)
 
+## CORRECTION - re-run from a clean sender (Pi Zero W, no AirPlay stack)
+The Mac results below were **tainted** (the Mac runs its own AirPlay stack). Re-running from the Pi Zero W
+(pyatv 0.18.0 via piwheels, Python 3.13, armv6l):
+- `tools/sweep_setup.py`: the audio-stream SETUP was **accepted for every variant** (PCM ct=1, ALAC ct=2, AAC-LC ct=4,
+  PCM without latency keys, PCM with minimal keys) - including the plain PCM baseline that got `400 Bad Request` from the Mac.
+- `tools/stage0_test.py "office speaker" 20 auto` streamed a 2 s tone with no errors (11:15 BST; audible result to be confirmed by Alex).
+- So the speaker is fine with pyatv's stock AirPlay 2 realtime path (transient HAP pairing + encrypted control channel + PCM).
+  The "needs ALAC/AAC" and "AirPlay 1 can't work" conclusions below should be treated as unproven.
+- Pi note: pyatv installs from piwheels but takes ~15 min on the Zero; scp does not work (no sftp-server), use `tar | ssh`.
+
+## Original Mac-run notes (tainted, kept for reference)
+
 Tooling: pyatv 0.18.0 on Python 3.14 (`atvremote` CLI is broken on 3.14 - `get_event_loop`; use the scripts in `tools/`).
 
 ## Speaker tested: "office speaker" (Harman Kardon Citation One, fw p20.0.0.2710, AirTunes/366.0)
