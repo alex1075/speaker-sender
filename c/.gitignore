@@ -3,3 +3,4 @@ airplay-send
 tests/test_unit
 tests/test_mock
 dist/
+tests/test_ap1

@@ -6,7 +6,7 @@ One repo, two products, one CI:
 
 | Path | What | Status |
 |---|---|---|
-| `c/` | `airplay-send`, an AirPlay 2 command-line sender in plain C (Linux, macOS) | Working: verified on Harman Kardon Citation One, Sonos Bookshelf and HomePod |
+| `c/` | `airplay-send`, an AirPlay 1 and 2 command-line sender in plain C (Linux, macOS) | Working: verified on Harman Kardon Citation One, Sonos Bookshelf and HomePod |
 | `android/` | Android app (Kotlin, AudioPlaybackCapture foreground service) | Scaffold, handshake port not done yet |
 | `bridge/` | Python bridge (pyatv) used for the Pi/turntable setup | Working |
 | `docs/` | Protocol notes | |
@@ -45,7 +45,7 @@ gradle -p android assembleDebug     # needs JDK 17 and Gradle >= 8.9; APK in and
 | Harman Kardon Citation One | PCM | ✅ Works |
 | Sonos Bookshelf | ALAC | ✅ Works |
 | HomePod | PCM | ✅ Works |
-| Yamaha RX-V679 | - | ❌ Not supported: AirPlay 1 only (rejects pair-setup with 404) |
+| Yamaha RX-V679 | ALAC (AirPlay 1) | ✅ Works |
 
 Quirks: the Harman Kardon needs the timing responder running before SETUP; Sonos needs volume and progress sent before RECORD/FLUSH.
 Playing on all three at once was in sync by ear (click-track test); not yet measured with instruments.
@@ -58,8 +58,8 @@ Pushing a tag such as `v0.1.0` (`.github/workflows/release.yml`) builds everythi
 
 ## Plan
 - **Done** - Stage 0/AirPlay 2 proven from Python and C (transient pairing, encrypted RTSP, ChaCha20-Poly1305, PCM and ALAC).
-- **Next** - AirPlay 1 (RAOP) sender in `c/` plus automatic AirPlay 1/2 detection from `/info` features and mDNS, so older receivers (Yamaha RX-V679) work.
-- **Then** - port the handshake to Kotlin (reuse the golden vectors in JVM tests), then capture test with the Pixel.
+- **Done** - AirPlay 1 (RAOP) sender in `c/` with automatic AirPlay 1/2 detection (Yamaha RX-V679 verified).
+- **Next** - port the handshake to Kotlin (reuse the golden vectors in JVM tests), then capture test with the Pixel.
 - **Fallback** - Bluetooth A2DP into a Raspberry Pi, forwarded to speakers via the Python bridge.
 
 ## Known risks

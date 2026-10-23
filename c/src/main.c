@@ -41,6 +41,8 @@ static void usage(FILE *out)
             "      --raw       treat FILE as raw PCM\n"
             "      --pin PIN   pairing PIN if a speaker needs one (default 3939, the transient PIN)\n"
             "      --scan MS   discovery time in milliseconds (default 3000)\n"
+            "      --ap1       force the AirPlay 1 (RAOP) protocol for all targets (default: detected per speaker)\n"
+            "      --ap2       force the AirPlay 2 protocol for all targets\n"
             "  -q, --quiet     only print errors\n"
             "  -v, --verbose   more output (repeat for protocol debug)\n"
             "  -h, --help      this help\n"
@@ -108,6 +110,8 @@ int main(int argc, char **argv)
                                              {"raw", no_argument, 0, 1001},
                                              {"pin", required_argument, 0, 1002},
                                              {"scan", required_argument, 0, 1003},
+                                             {"ap1", no_argument, 0, 1005},
+                                             {"ap2", no_argument, 0, 1006},
                                              {"verbose", no_argument, 0, 'v'},
                                              {"quiet", no_argument, 0, 'q'},
                                              {"help", no_argument, 0, 'h'},
@@ -118,7 +122,7 @@ int main(int argc, char **argv)
     char alac_names[MAX_TARGETS][160];
     int nalac = 0;
     double default_volume = 30;
-    int do_list = 0, force_raw = 0, scan_ms = 3000;
+    int do_list = 0, force_raw = 0, scan_ms = 3000, force_proto = 0;
     double tone_secs = 0;
     char pin[16] = "3939";
     ap_debug = 1;
@@ -163,6 +167,12 @@ int main(int argc, char **argv)
             break;
         case 1003:
             scan_ms = atoi(optarg);
+            break;
+        case 1005:
+            force_proto = 1;
+            break;
+        case 1006:
+            force_proto = 2;
             break;
         case 'v':
             ap_debug++;
@@ -246,6 +256,7 @@ int main(int argc, char **argv)
         ap_target *t = &targets[i];
         memset(t, 0, sizeof(*t));
         snprintf(t->pin, sizeof(t->pin), "%s", pin);
+        t->proto = force_proto;
         t->volume_pct = reqs[i].volume > 0 ? reqs[i].volume : default_volume;
         char host[64];
         int port;
@@ -268,6 +279,11 @@ int main(int argc, char **argv)
             t->port = devs[m].port ? devs[m].port : 7000;
             if (is_sonos(&devs[m]))
                 t->use_alac = 1;
+            if (!t->proto) {
+                uint64_t f = ap_parse_features(devs[m].features);
+                if (f)
+                    t->proto = ap_proto_from_features(f);
+            }
         }
         for (int k = 0; k < nalac; k++)
             if (strcasecmp(alac_names[k], reqs[i].spec) == 0 || strcasecmp(alac_names[k], t->name) == 0)

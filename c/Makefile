@@ -51,9 +51,13 @@ tests/test_unit: tests/test_unit.o $(LIB_OBJ)
 tests/test_mock: tests/test_mock.o $(LIB_OBJ)
 	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
-check: tests/test_unit tests/test_mock airplay-send
+tests/test_ap1: tests/test_ap1.o $(LIB_OBJ)
+	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
+check: tests/test_unit tests/test_mock tests/test_ap1 airplay-send
 	./tests/test_unit
 	./tests/test_mock
+	./tests/test_ap1
 	./tests/test_cli.sh ./airplay-send
 
 install: airplay-send
@@ -61,6 +65,6 @@ install: airplay-send
 	install -m 755 airplay-send $(DESTDIR)$(PREFIX)/bin/airplay-send
 
 clean:
-	rm -f $(LIB_OBJ) src/main.o airplay-send tests/*.o tests/test_unit tests/test_mock
+	rm -f $(LIB_OBJ) src/main.o airplay-send tests/*.o tests/test_unit tests/test_mock tests/test_ap1
 
 .PHONY: all check install clean

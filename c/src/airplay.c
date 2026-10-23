@@ -47,6 +47,8 @@ struct ap_session {
     hap_session ev;
     ap_buf evplain;
     uint8_t shk[32];
+    int ap1;               /* AirPlay 1 (RAOP) session */
+    char sess_hdr[96];     /* "Session: x" from the AirPlay 1 SETUP reply */
 
     /* stream state (guarded by lock) */
     pthread_mutex_t lock;
@@ -91,6 +93,37 @@ int ap_build_audio_packet(const uint8_t key[32], uint64_t counter, int first, ui
         return -1;
     memcpy(out + 12 + n, nonce + 4, 8); /* last 8 bytes of the nonce travel with the packet */
     return 12 + n + 8;
+}
+
+int ap_build_audio_packet_plain(int first, uint16_t seq, uint32_t rtp_ts, uint32_t ssrc, const uint8_t *payload,
+                                size_t payload_len, uint8_t *out)
+{
+    out[0] = 0x80;
+    out[1] = first ? 0xE0 : 0x60;
+    ap_put_be16(out + 2, seq);
+    ap_put_be32(out + 4, rtp_ts);
+    ap_put_be32(out + 8, ssrc);
+    memcpy(out + 12, payload, payload_len);
+    return (int)(12 + payload_len);
+}
+
+uint64_t ap_parse_features(const char *str)
+{
+    if (!str || !*str)
+        return 0;
+    char *end = NULL;
+    uint64_t lo = strtoull(str, &end, 0);
+    uint64_t hi = 0;
+    if (end && *end == ',')
+        hi = strtoull(end + 1, NULL, 0);
+    return (hi << 32) | (lo & 0xFFFFFFFFull);
+}
+
+int ap_proto_from_features(uint64_t f)
+{
+    /* 40 buffered audio, 41 PTP clock, 46 HomeKit pairing, 48 transient pairing */
+    const uint64_t ap2 = (1ull << 40) | (1ull << 41) | (1ull << 46) | (1ull << 48);
+    return (f & ap2) ? 2 : 1;
 }
 
 void ap_build_sync_packet(int first, uint32_t rtp_now_without_latency, uint64_t ntp, uint32_t rtp_now,
@@ -193,9 +226,11 @@ static int pair_setup_transient(ap_session *s, uint8_t session_key[64])
     }
     ap_buf_free(&m1);
     if (r.code != 200 || !r.body) {
-        AP_ERR("%s: pair-setup M1 rejected (HTTP %d)", s->t.name, r.code);
+        int code = r.code;
+        if (code != 404 || s->t.proto == 2)
+            AP_ERR("%s: pair-setup M1 rejected (HTTP %d)", s->t.name, code);
         http_resp_free(&r);
-        return -1;
+        return code == 404 ? -2 : -1;
     }
 
     size_t err_len = 0, salt_len = 0, B_len = 0;
@@ -407,7 +442,8 @@ static void handle_events(ap_session *s)
 static void *keep_thread(void *arg)
 {
     ap_session *s = arg;
-    uint64_t next = ap_now_ns() + 2000000000ull;
+    uint64_t period = s->ap1 ? 5000000000ull : 2000000000ull;
+    uint64_t next = ap_now_ns() + period;
     int failures = 0;
     while (!s->stop) {
         int wait_ms = 100;
@@ -421,14 +457,16 @@ static void *keep_thread(void *arg)
         }
         if (ap_now_ns() >= next) {
             http_resp r;
-            if (rtsp_exchange(&s->conn, "POST", "/feedback", NULL, NULL, NULL, 0, &r) == 0)
+            int kr = s->ap1 ? rtsp_exchange(&s->conn, "OPTIONS", "*", NULL, NULL, NULL, 0, &r)
+                            : rtsp_exchange(&s->conn, "POST", "/feedback", NULL, NULL, NULL, 0, &r);
+            if (kr == 0)
                 failures = 0;
             else if (++failures >= 3) {
                 AP_ERR("%s: connection lost (feedback failed)", s->t.name);
                 s->dead = 1;
             }
             http_resp_free(&r);
-            next = ap_now_ns() + 2000000000ull;
+            next = ap_now_ns() + period;
         }
     }
     return NULL;
@@ -446,6 +484,115 @@ static void dmap_string(ap_buf *b, const char *tag, const char *val)
 }
 
 static const char *const SETUP_CT = "application/x-apple-binary-plist";
+
+/* ======================================================================== AirPlay 1 (RAOP) */
+
+static int kv_int(const char *s, const char *key)
+{
+    if (!s)
+        return 0;
+    char pat[32];
+    snprintf(pat, sizeof(pat), "%s=", key);
+    const char *p = strstr(s, pat);
+    return p ? atoi(p + strlen(pat)) : 0;
+}
+
+/* OPTIONS, ANNOUNCE (ALAC, unencrypted), SETUP, RECORD, volume. Receivers must accept et=0 (no encryption). */
+static int raop_session_start(ap_session *s, uint16_t ctrl_port, uint16_t timing_port)
+{
+    const ap_target *t = &s->t;
+    http_resp r;
+
+    if (rtsp_exchange(&s->conn, "OPTIONS", "*", NULL, NULL, NULL, 0, &r)) {
+        AP_ERR("%s: OPTIONS failed (%s)", t->name, r.status_line ? r.status_line : "no response");
+        http_resp_free(&r);
+        return -1;
+    }
+    http_resp_free(&r);
+
+    char sdp[640];
+    int sl = snprintf(sdp, sizeof(sdp),
+                      "v=0\r\no=iTunes %u 0 IN IP4 %s\r\ns=iTunes\r\nc=IN IP4 %s\r\nt=0 0\r\n"
+                      "m=audio 0 RTP/AVP 96\r\na=rtpmap:96 AppleLossless\r\n"
+                      "a=fmtp:96 352 0 16 40 10 14 2 255 0 0 44100\r\n",
+                      (unsigned)s->conn.session_id, s->conn.local_ip, s->conn.remote_ip);
+    if (rtsp_exchange(&s->conn, "ANNOUNCE", NULL, "application/sdp", NULL, (const uint8_t *)sdp, (size_t)sl, &r)) {
+        AP_ERR("%s: ANNOUNCE failed (%s)", t->name, r.status_line ? r.status_line : "no response");
+        http_resp_free(&r);
+        return -1;
+    }
+    http_resp_free(&r);
+
+    char tr[192];
+    snprintf(tr, sizeof(tr), "Transport: RTP/AVP/UDP;unicast;interleaved=0-1;mode=record;control_port=%u;timing_port=%u",
+             (unsigned)ctrl_port, (unsigned)timing_port);
+    const char *sh[] = {tr, NULL};
+    if (rtsp_exchange(&s->conn, "SETUP", NULL, NULL, sh, NULL, 0, &r)) {
+        AP_ERR("%s: SETUP failed (%s)", t->name, r.status_line ? r.status_line : "no response");
+        http_resp_free(&r);
+        return -1;
+    }
+    const char *transport = http_resp_header(&r, "Transport");
+    int data_port = kv_int(transport, "server_port");
+    int remote_ctrl = kv_int(transport, "control_port");
+    const char *sess = http_resp_header(&r, "Session");
+    s->sess_hdr[0] = 0;
+    if (sess) {
+        size_t n = strcspn(sess, ";\r\n");
+        snprintf(s->sess_hdr, sizeof(s->sess_hdr), "Session: %.*s", (int)n, sess);
+    }
+    http_resp_free(&r);
+    if (data_port <= 0 || remote_ctrl <= 0) {
+        AP_ERR("%s: SETUP reply had no server_port/control_port", t->name);
+        return -1;
+    }
+    AP_DBG("%s: AirPlay 1 server_port=%d control_port=%d", t->name, data_port, remote_ctrl);
+
+    memset(&s->audio_dst, 0, sizeof(s->audio_dst));
+    s->audio_dst.sin_family = AF_INET;
+    s->audio_dst.sin_port = htons((uint16_t)data_port);
+    inet_pton(AF_INET, s->conn.remote_ip, &s->audio_dst.sin_addr);
+    s->ctrl_dst = s->audio_dst;
+    s->ctrl_dst.sin_port = htons((uint16_t)remote_ctrl);
+    s->audio_fd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (s->audio_fd < 0 || connect(s->audio_fd, (struct sockaddr *)&s->audio_dst, sizeof(s->audio_dst)) < 0) {
+        AP_ERR("%s: cannot open audio socket: %s", t->name, strerror(errno));
+        return -1;
+    }
+
+    uint8_t rnd[2];
+    ap_random(rnd, 2);
+    s->seq = (uint16_t)((rnd[0] << 8) | rnd[1]);
+    s->frames_sent = 0;
+    s->ntp_start = ap_ntp_now();
+    s->first_packet = 1;
+    s->first_sync = 1;
+    s->sync_ready = 1;
+
+    char rtpinfo[96];
+    snprintf(rtpinfo, sizeof(rtpinfo), "RTP-Info: seq=%u;rtptime=%u", (unsigned)s->seq, (unsigned)AP_LATENCY_FRAMES);
+    const char *rh[] = {"Range: npt=0-", rtpinfo, s->sess_hdr[0] ? s->sess_hdr : NULL, NULL};
+    if (rtsp_exchange(&s->conn, "RECORD", NULL, NULL, rh, NULL, 0, &r)) {
+        AP_ERR("%s: RECORD failed (%s)", t->name, r.status_line ? r.status_line : "no response");
+        http_resp_free(&r);
+        return -1;
+    }
+    const char *lat = http_resp_header(&r, "Audio-Latency");
+    if (lat)
+        AP_DBG("%s: receiver Audio-Latency %s", t->name, lat);
+    http_resp_free(&r);
+
+    if (t->volume_pct > 0) {
+        char vol[48];
+        snprintf(vol, sizeof(vol), "volume: %.6f\r\n", ap_volume_db(t->volume_pct));
+        const char *vh[] = {s->sess_hdr[0] ? s->sess_hdr : NULL, NULL};
+        if (rtsp_exchange(&s->conn, "SET_PARAMETER", NULL, "text/parameters", vh, (const uint8_t *)vol, strlen(vol), &r))
+            AP_DBG("%s: volume not accepted", t->name);
+        http_resp_free(&r);
+    }
+    return 0;
+}
+
 
 ap_session *ap_session_open(const ap_target *t)
 {
@@ -485,20 +632,39 @@ ap_session *ap_session_open(const ap_target *t)
     s->have_conn = 1;
 
     http_resp r;
-    /* GET /info (informational; some speakers insist on it before pairing) */
+    /* GET /info (informational; some speakers insist on it before pairing). Its features tell AirPlay 1 from 2. */
+    uint64_t feat = 0;
     if (rtsp_exchange(&s->conn, "GET", "/info", NULL, NULL, NULL, 0, &r) == 0) {
         bp *info = NULL;
-        if (resp_bplist(&r, &info) == 0 && ap_debug >= 2) {
-            char *d = bp_dump(info);
-            AP_DBG("%s: info: %.600s", t->name, d);
-            free(d);
+        if (resp_bplist(&r, &info) == 0) {
+            const bp *f = bp_get(info, "features");
+            if (f)
+                feat = (uint64_t)bp_as_int(f, 0);
+            if (ap_debug >= 2) {
+                char *d = bp_dump(info);
+                AP_DBG("%s: info: %.600s", t->name, d);
+                free(d);
+            }
         }
         bp_free(info);
     }
     http_resp_free(&r);
 
+    int proto = t->proto;
+    if (!proto && feat)
+        proto = ap_proto_from_features(feat);
+    if (proto == 1) {
+        AP_LOG("%s: AirPlay 1 speaker", t->name);
+        goto raop;
+    }
+
     uint8_t K[64];
-    if (pair_setup_transient(s, K))
+    int pr = pair_setup_transient(s, K);
+    if (pr == -2 && !t->proto) {
+        AP_LOG("%s: no AirPlay 2 pairing, trying AirPlay 1", t->name);
+        goto raop;
+    }
+    if (pr)
         goto fail;
 
     uint8_t out_key[32], in_key[32];
@@ -702,6 +868,17 @@ ap_session *ap_session_open(const ap_target *t)
 
     AP_LOG("%s: ready", t->name);
     return s;
+
+raop:
+    s->ap1 = 1;
+    s->t.use_alac = 1; /* AirPlay 1 audio is always ALAC frames here */
+    if (raop_session_start(s, ctrl_port, timing_port))
+        goto fail;
+    if (pthread_create(&s->th_keep, NULL, keep_thread, s))
+        goto fail;
+    s->keep_started = 1;
+    AP_LOG("%s: ready", t->name);
+    return s;
 fail:
     ap_session_close(s);
     return NULL;
@@ -738,8 +915,9 @@ int ap_session_send(ap_session *s, const uint8_t *pcm_le)
     pthread_mutex_lock(&s->lock);
     uint8_t pkt[MAX_PKT];
     uint32_t ts = (uint32_t)(s->frames_sent + AP_LATENCY_FRAMES);
-    int n = ap_build_audio_packet(s->shk, s->aead_ctr++, s->first_packet, s->seq, ts, s->conn.session_id, payload, plen,
-                                  pkt);
+    int n = s->ap1 ? ap_build_audio_packet_plain(s->first_packet, s->seq, ts, s->conn.session_id, payload, plen, pkt)
+                   : ap_build_audio_packet(s->shk, s->aead_ctr++, s->first_packet, s->seq, ts, s->conn.session_id,
+                                           payload, plen, pkt);
     if (n < 0) {
         pthread_mutex_unlock(&s->lock);
         return -1;
@@ -767,7 +945,7 @@ void ap_session_close(ap_session *s)
         return;
     if (s->have_conn && s->conn.fd >= 0 && !s->dead) {
         http_resp r;
-        const char *hh[] = {"Session: 0", NULL};
+        const char *hh[] = {s->ap1 ? (s->sess_hdr[0] ? s->sess_hdr : NULL) : "Session: 0", NULL};
         s->conn.timeout_ms = 2000;
         rtsp_exchange(&s->conn, "TEARDOWN", NULL, NULL, hh, NULL, 0, &r);
         http_resp_free(&r);

@@ -19,6 +19,7 @@ typedef struct {
     int use_alac;
     double volume_pct; /* 0..100, mapped to -30..0 dB like pyatv */
     char pin[16];      /* transient pairing PIN, default "3939" */
+    int proto;         /* 0 = detect, 1 = AirPlay 1 (RAOP), 2 = AirPlay 2 */
     const char *title, *artist, *album;
     double duration_s; /* track length for the progress hint, <= 0 = unknown (live) */
 } ap_target;
@@ -53,6 +54,13 @@ void ap_build_sync_packet(int first, uint32_t rtp_now_without_latency, uint64_t 
                           uint8_t out[20]);
 /* Answers a 32 byte NTP timing request; returns 0 when `req` was a valid request. */
 int ap_build_timing_reply(const uint8_t *req, size_t req_len, uint64_t ntp_now, uint8_t out[32]);
+/* AirPlay 1 audio packet: plain RTP header + payload, no encryption. out needs 12 + payload bytes. */
+int ap_build_audio_packet_plain(int first, uint16_t seq, uint32_t rtp_ts, uint32_t ssrc, const uint8_t *payload,
+                                size_t payload_len, uint8_t *out);
+/* Parses a features value as advertised in mDNS/GET /info ("0x445F8A00,0x1C340" = low,high). 0 if empty/invalid. */
+uint64_t ap_parse_features(const char *s);
+/* 2 when the features advertise AirPlay 2 (buffered audio, PTP, HomeKit or transient pairing), else 1 */
+int ap_proto_from_features(uint64_t features);
 /* volume percent -> dB as sent in SET_PARAMETER */
 double ap_volume_db(double pct);
 

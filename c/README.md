@@ -1,6 +1,6 @@
 # airplay-send
 
-A small command-line AirPlay 2 sender for Linux (and macOS), written in plain C. It plays audio on
+A small command-line AirPlay 1 and AirPlay 2 sender for Linux (and macOS), written in plain C. It plays audio on
 AirPlay speakers (HomePod, Sonos, Harman Kardon, ...) from anything that can write PCM to a pipe -
 no Apple hardware or software involved.
 
@@ -48,12 +48,17 @@ piled up while the speakers were being set up is dropped. At end of input the sp
 
 ## How it works / limits
 
-The sender follows what iOS does for an AirPlay 2 "audio" stream: transient HomeKit pairing (SRP-6a, PIN 3939,
+AirPlay 1 or 2 is detected per speaker (from the `features` in mDNS and `GET /info`; `--ap1` / `--ap2` force it). If an
+AirPlay 2 pairing is refused with 404, the sender falls back to AirPlay 1.
+
+For AirPlay 2 the sender follows what iOS does for an "audio" stream: transient HomeKit pairing (SRP-6a, PIN 3939,
 no user interaction), ChaCha20-Poly1305 encrypted RTSP and event channels, a realtime RTP stream
 (encrypted, 352 frames per packet) with sync packets and an NTP-style timing responder, and `/feedback` keep-alives.
 
 * Sonos (and anything with `--alac NAME`) is fed ALAC frames; the frames carry the samples uncompressed,
   so no encoder is needed.
+* AirPlay 1 (RAOP, e.g. older Yamaha/Denon receivers): OPTIONS, ANNOUNCE (ALAC), SETUP, RECORD, RTP with sync and timing,
+  unencrypted. Receivers that insist on RSA/AES (`et` without 0) or MFi authentication are not supported.
 * 44.1 kHz / 16-bit / stereo only. No AAC, no resampling.
 * Speakers that require a PIN or password (rather than transient pairing) are not supported (`--pin` exists for
   speakers that use a fixed PIN with the same protocol, untested).
@@ -74,6 +79,8 @@ The Python reference this was ported from and the protocol notes are in the
 * `tests/test_mock` - a mock AirPlay 2 receiver written from the receiver side. The real sender pairs with it,
   sets the stream up (PCM and ALAC), plays a known signal and the mock decrypts and verifies every packet and
   checks sync, timing replies, event channel replies, volume, metadata and TEARDOWN.
+* `tests/test_ap1` - the same for AirPlay 1: a mock RAOP receiver checks ANNOUNCE/SETUP/RECORD/volume/TEARDOWN, every
+  ALAC packet, sync and timing, plus the AirPlay 1/2 detection (by features and by the pair-setup 404 fallback).
 * `tests/test_cli.sh` - command-line behaviour and an end-to-end pipeline run through the real binary.
 
 GitHub Actions runs these on Linux x86_64, Linux arm64 and macOS, under AddressSanitizer/UBSan, and checks that the
