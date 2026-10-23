@@ -1,0 +1,51 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, ubuntu-24.04-arm, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install OpenSSL (Linux)
+        if: startsWith(matrix.os, 'ubuntu')
+        run: sudo apt-get update && sudo apt-get install -y libssl-dev
+      - name: Install OpenSSL (macOS)
+        if: startsWith(matrix.os, 'macos')
+        run: brew install openssl@3
+      - name: Build
+        run: make
+      - name: Unit, mock-receiver and command line tests
+        run: make check
+
+  sanitizers:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y libssl-dev
+      - name: Build and test with AddressSanitizer and UBSan
+        env:
+          CFLAGS: -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer
+          LDFLAGS: -fsanitize=address,undefined
+          ASAN_OPTIONS: detect_leaks=0
+        run: make check
+
+  vectors:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Regenerate reference vectors with pyatv/srptools and compare
+        run: |
+          pip install pyatv srptools cryptography
+          python tools/gen_vectors.py > /tmp/vectors.h
+          diff -u tests/vectors.h /tmp/vectors.h

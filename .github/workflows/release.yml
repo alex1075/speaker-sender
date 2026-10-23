@@ -1,0 +1,83 @@
+name: release
+
+# Push a tag like v0.1.0 to build static binaries and publish them as a GitHub release.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  linux:
+    strategy:
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            arch: x86_64
+          - runner: ubuntu-24.04-arm
+            arch: aarch64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build fully static binary (musl) and run the tests
+        run: |
+          docker run --rm -v "$PWD":/src -w /src alpine:3.20 sh -c '
+            apk add --no-cache build-base linux-headers openssl-dev openssl-libs-static git &&
+            git config --global --add safe.directory /src &&
+            make STATIC=full VERSION=${{ github.ref_name }} &&
+            make STATIC=full VERSION=${{ github.ref_name }} check &&
+            strip airplay-send'
+          file airplay-send || true
+          ./airplay-send --version
+      - name: Package
+        run: |
+          name=airplay-send-${{ github.ref_name }}-linux-${{ matrix.arch }}
+          mkdir -p dist/$name
+          cp airplay-send README.md dist/$name/
+          tar -C dist -czf dist/$name.tar.gz $name
+          (cd dist && sha256sum $name.tar.gz > $name.tar.gz.sha256)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-${{ matrix.arch }}
+          path: dist/*.tar.gz*
+
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: brew install openssl@3
+      - name: Build (libcrypto linked statically) and test
+        run: |
+          make STATIC=1 VERSION=${{ github.ref_name }}
+          make STATIC=1 VERSION=${{ github.ref_name }} check
+          strip airplay-send
+          ./airplay-send --version
+      - name: Package
+        run: |
+          name=airplay-send-${{ github.ref_name }}-macos-arm64
+          mkdir -p dist/$name
+          cp airplay-send README.md dist/$name/
+          tar -C dist -czf dist/$name.tar.gz $name
+          (cd dist && shasum -a 256 $name.tar.gz > $name.tar.gz.sha256)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-arm64
+          path: dist/*.tar.gz*
+
+  publish:
+    needs: [linux, macos]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd dist && cat *.sha256 > SHA256SUMS && ls -l
+          gh release create "${{ github.ref_name }}" --repo "${{ github.repository }}" \
+            --title "${{ github.ref_name }}" --generate-notes *.tar.gz SHA256SUMS

@@ -1,0 +1,5 @@
+airplay-send
+*.o
+tests/test_unit
+tests/test_mock
+dist/
