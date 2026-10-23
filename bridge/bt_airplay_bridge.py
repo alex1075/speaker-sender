@@ -10,7 +10,7 @@ disconnects again and waits for the next session.
 Notes
 - pyatv ends a stream once its source returns empty frames, so LiveSource always returns a full packet
   (silence when nothing arrived) and only returns empty to finish the session.
-- Latency is ~2 s (AirPlay buffering): fine for music, not for video.
+- Latency is ~2 s (AirPlay buffering) plus whatever was buffered while connecting: fine for music, not for video.
 """
 import argparse
 import asyncio
@@ -123,7 +123,11 @@ async def stream_session(args, proc, first_chunk):
     storage = MemoryStorage()
     await storage.load()
     try:
-        confs = [d for d in await pyatv.scan(loop, timeout=8, storage=storage) if d.name == args.target]
+        confs = []
+        for scan_s in (4, 8):  # 4 s finds everything on this network (measured); 8 s is the fallback
+            confs = [d for d in await pyatv.scan(loop, timeout=scan_s, storage=storage) if d.name == args.target]
+            if confs:
+                break
         if not confs:
             log.warning("speaker %r not found on the network", args.target)
             return
@@ -161,7 +165,7 @@ if __name__ == "__main__":
     ap.add_argument("--target", required=True, help="AirPlay speaker name, exactly as shown by tools/scan.py")
     ap.add_argument("--volume", type=float, default=30.0, help="initial speaker volume 0-100 (default 30)")
     ap.add_argument("--idle", type=float, default=60.0, help="seconds of digital silence before disconnecting")
-    ap.add_argument("--max-buffer", type=float, default=0.4, help="max seconds of captured audio held (latency cap)")
+    ap.add_argument("--max-buffer", type=float, default=4.0, help="max seconds of captured audio held; covers the ~5-6 s AirPlay connect time (latency cap)")
     ap.add_argument("--capture-cmd", nargs="+", default=CAPTURE_CMD, help="command that writes S16_LE/44.1k/stereo raw PCM")
     ap.add_argument("--once", action="store_true", help="exit after one session (for testing)")
     ap.add_argument("-v", "--verbose", action="store_true")
