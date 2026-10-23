@@ -45,7 +45,7 @@ gradle -p android assembleDebug     # needs JDK 17 and Gradle >= 8.9; APK in and
 | Harman Kardon Citation One | PCM | ✅ Works |
 | Sonos Bookshelf | ALAC | ✅ Works |
 | HomePod | PCM | ✅ Works |
-| Yamaha RX-V679 | - | Not tested |
+| Yamaha RX-V679 | - | ❌ Not supported: AirPlay 1 only (rejects pair-setup with 404) |
 
 Quirks: the Harman Kardon needs the timing responder running before SETUP; Sonos needs volume and progress sent before RECORD/FLUSH.
 Playing on all three at once was in sync by ear (click-track test); not yet measured with instruments.
