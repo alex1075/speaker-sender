@@ -1,0 +1,3 @@
+# /etc/default/bt-airplay-bridge
+TARGET="office speaker"
+VOLUME=30

@@ -1,0 +1,12 @@
+[Unit]
+Description=Configure Bluetooth as a closed A2DP sink
+After=bluetooth.service bt-agent.service
+Requires=bluetooth.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/bin/bt-sink-setup.sh
+
+[Install]
+WantedBy=multi-user.target
