@@ -238,20 +238,19 @@ class AirPlaySession private constructor(private val t: Target) : Closeable {
         remoteCtrlPort = (s0?.get("controlPort") as? Number)?.toInt() ?: 0
         if (dataPort <= 0 || remoteCtrlPort <= 0) throw IOException("${t.name}: audio SETUP reply had no dataPort/controlPort")
         audio = DatagramSocket().also { it.connect(InetSocketAddress(remote, dataPort)) }
+    }
+
+    /**
+     * Starts the audio clock (ap_session_begin). Call right before the first packet. Sync packets start only
+     * here, so none goes out before the anchor they describe is set.
+     */
+    fun beginClock() {
         synchronized(lock) {
             ntpStart = Clock.ntpNow()
             framesSent = 0
             firstSync = true
         }
         syncReady = true
-    }
-
-    /** Starts the audio clock. Call right before the first packet (ap_session_begin). */
-    fun beginClock() {
-        synchronized(lock) {
-            ntpStart = Clock.ntpNow()
-            framesSent = 0
-        }
     }
 
     /** One packet: PACKET_PCM_BYTES of interleaved 16-bit little-endian stereo. Swapped to big endian as AirPlay wants. */
