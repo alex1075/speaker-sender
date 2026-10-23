@@ -93,8 +93,6 @@ object Bplist {
         else -> 8
     }
 
-    private fun beBytes(v: Long, n: Int): ByteArray = ByteArray(n) { (v ushr (8 * (n - 1 - it))).toByte() }
-
     private class Reader(val buf: ByteArray) {
         val offsetSize: Int
         val refSize: Int
