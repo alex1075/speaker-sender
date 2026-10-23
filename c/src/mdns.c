@@ -244,7 +244,7 @@ static int ingest_pkt(const unsigned char *pkt, size_t len)
                 if (strcasecmp(g_a[k].host, name) == 0)
                     exists = 1;
             if (!exists && g_na < MAX_A) {
-                snprintf(g_a[g_na].host, sizeof(g_a[g_na].host), "%s", name);
+                snprintf(g_a[g_na].host, sizeof(g_a[g_na].host), "%.127s", name);
                 inet_ntop(AF_INET, pkt + rd, g_a[g_na].addr, sizeof(g_a[g_na].addr));
                 g_na++;
             }

@@ -230,7 +230,7 @@ int main(int argc, char **argv)
         char host[64];
         int port;
         if (name_is_hostport(reqs[i].spec, host, sizeof(host), &port)) {
-            snprintf(t->name, sizeof(t->name), "%s", reqs[i].spec);
+            snprintf(t->name, sizeof(t->name), "%.159s", reqs[i].spec);
             snprintf(t->host, sizeof(t->host), "%s", host);
             t->port = port;
         } else {
