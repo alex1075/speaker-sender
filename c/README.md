@@ -6,9 +6,9 @@ no Apple hardware or software involved.
 
 ```sh
 airplay-send --list                                   # find speakers
-airplay-send -t Kitchen song.wav                      # play a WAV file
-arecord -f cd -t raw | airplay-send -t Kitchen        # live capture from a sound card / line-in
-ffmpeg -i radio.mp3 -f s16le -ar 44100 -ac 2 - | airplay-send -t Kitchen -t Bedroom=40
+airplay-send -t Speaker1 song.wav                      # play a WAV file
+arecord -f cd -t raw | airplay-send -t Speaker1        # live capture from a sound card / line-in
+ffmpeg -i radio.mp3 -f s16le -ar 44100 -ac 2 - | airplay-send -t Speaker1 -t Speaker2=40
 airplay-send --tone 3 -t 192.168.1.50                 # 3 s test tone, speaker by IP
 ```
 

@@ -6,7 +6,7 @@ One repo, two products, one CI:
 
 | Path | What | Status |
 |---|---|---|
-| `c/` | `airplay-send`, an AirPlay 2 command-line sender in plain C (Linux, macOS) | Working: office Harman Kardon, Kitchen Sonos and Bedroom HomePod verified |
+| `c/` | `airplay-send`, an AirPlay 2 command-line sender in plain C (Linux, macOS) | Working: verified on Harman Kardon Citation One, Sonos Bookshelf and HomePod |
 | `android/` | Android app (Kotlin, AudioPlaybackCapture foreground service) | Scaffold, handshake port not done yet |
 | `bridge/` | Python bridge (pyatv) used for the Pi/turntable setup | Working |
 | `docs/` | Protocol notes | |
@@ -40,15 +40,15 @@ gradle -p android assembleDebug     # needs JDK 17 and Gradle >= 8.9; APK in and
 
 ## Tested on
 
-| Area | Model | Format | Result |
-|:--|:--|:--:|:--|
-| Office | Harman Kardon Citation One | PCM | ✅ Works |
-| Kitchen | Sonos Bookshelf | ALAC | ✅ Works |
-| Bedroom | HomePod | PCM | ✅ Works |
-| Living Room | Yamaha RX-V679 | - | Not tested |
+| Model | Format | Result |
+|:--|:--:|:--|
+| Harman Kardon Citation One | PCM | ✅ Works |
+| Sonos Bookshelf | ALAC | ✅ Works |
+| HomePod | PCM | ✅ Works |
+| Yamaha RX-V679 | - | Not tested |
 
 Quirks: the Harman Kardon needs the timing responder running before SETUP; Sonos needs volume and progress sent before RECORD/FLUSH.
-Multi-room sync from the C tool is not yet measured.
+Playing on all three at once was in sync by ear (click-track test); not yet measured with instruments.
 
 ## CI and releases
 
