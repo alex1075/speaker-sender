@@ -634,6 +634,26 @@ ap_session *ap_session_open(const ap_target *t)
     s->first_sync = 1;
     s->sync_ready = 1;
 
+    /* same order as pyatv/iOS: volume, progress, metadata, RECORD, FLUSH (Sonos is picky) */
+    if (t->volume_pct > 0) {
+        char vol[48];
+        snprintf(vol, sizeof(vol), "volume: %.6f", ap_volume_db(t->volume_pct));
+        if (rtsp_exchange(&s->conn, "SET_PARAMETER", NULL, "text/parameters", NULL, (const uint8_t *)vol, strlen(vol), &r))
+            AP_DBG("%s: volume not accepted", t->name);
+        http_resp_free(&r);
+    }
+    {
+        double dur = t->duration_s > 0 ? t->duration_s : 12.0 * 3600.0;
+        uint64_t start = AP_LATENCY_FRAMES;
+        uint64_t end = start + (uint64_t)(dur * AP_SAMPLE_RATE);
+        char prog[96];
+        snprintf(prog, sizeof(prog), "progress: %llu/%llu/%llu", (unsigned long long)start, (unsigned long long)start,
+                 (unsigned long long)end);
+        if (rtsp_exchange(&s->conn, "SET_PARAMETER", NULL, "text/parameters", NULL, (const uint8_t *)prog, strlen(prog), &r))
+            AP_DBG("%s: progress not accepted", t->name);
+        http_resp_free(&r);
+    }
+
     /* metadata (best effort) */
     {
         ap_buf pl, md;
@@ -680,13 +700,6 @@ ap_session *ap_session_open(const ap_target *t)
         http_resp_free(&r);
     }
 
-    if (t->volume_pct > 0) {
-        char vol[48];
-        snprintf(vol, sizeof(vol), "volume: %.6f", ap_volume_db(t->volume_pct));
-        if (rtsp_exchange(&s->conn, "SET_PARAMETER", NULL, "text/parameters", NULL, (const uint8_t *)vol, strlen(vol), &r))
-            AP_DBG("%s: volume not accepted", t->name);
-        http_resp_free(&r);
-    }
     AP_LOG("%s: ready", t->name);
     return s;
 fail:

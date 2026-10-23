@@ -22,6 +22,7 @@ struct input {
     int fd;
     int live;
     int own_fd;
+    uint64_t total_bytes; /* known payload size or 0 */
     uint64_t data_left; /* bytes still to read from the fd (WAV data chunk), UINT64_MAX = unbounded */
     /* tone */
     double tone_hz;
@@ -193,6 +194,7 @@ static int parse_wav(input *in)
                 return -1;
             }
             in->data_left = (sz == 0 || sz == 0xFFFFFFFFu) ? UINT64_MAX : sz;
+            in->total_bytes = in->data_left == UINT64_MAX ? 0 : sz;
             return 0;
         } else {
             lseek(in->fd, (off_t)sz + (off_t)(sz & 1), SEEK_CUR);
@@ -219,6 +221,8 @@ input *input_open(const char *path, int force_raw)
         struct stat st;
         if (fstat(in->fd, &st) == 0 && !S_ISREG(st.st_mode))
             in->live = 1;
+        else
+            in->total_bytes = (uint64_t)st.st_size;
     }
     if (!force_raw && !in->live) {
         /* sniff for RIFF */
@@ -299,6 +303,17 @@ void input_close(input *in)
 }
 
 int input_is_live(const input *in) { return in->live; }
+
+double input_duration(const input *in)
+{
+    if (in->kind == SRC_TONE)
+        return (double)in->tone_total / AP_SAMPLE_RATE;
+    if (in->kind == SRC_MEM)
+        return (double)in->mem_len / (AP_SAMPLE_RATE * AP_FRAME_BYTES);
+    if (in->total_bytes)
+        return (double)in->total_bytes / (AP_SAMPLE_RATE * AP_FRAME_BYTES);
+    return -1;
+}
 
 long input_wait(input *in, size_t bytes, int timeout_ms)
 {

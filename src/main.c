@@ -269,6 +269,9 @@ int main(int argc, char **argv)
         return 2;
     }
 
+    for (int i = 0; i < nreq; i++)
+        targets[i].duration_s = input_duration(in);
+
     ap_session *sessions[MAX_TARGETS] = {0};
     int ok = 0;
     for (int i = 0; i < nreq; i++) {

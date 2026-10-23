@@ -20,6 +20,7 @@ typedef struct {
     double volume_pct; /* 0..100, mapped to -30..0 dB like pyatv */
     char pin[16];      /* transient pairing PIN, default "3939" */
     const char *title, *artist, *album;
+    double duration_s; /* track length for the progress hint, <= 0 = unknown (live) */
 } ap_target;
 
 typedef struct ap_session ap_session;

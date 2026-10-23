@@ -16,6 +16,9 @@ input *input_open_tone(double seconds, double hz);
 input *input_open_memory(const uint8_t *data, size_t len);
 void input_close(input *in);
 
+/* length in seconds if known (tone, WAV, memory), else -1 */
+double input_duration(const input *in);
+
 /* 1 if the source is a live stream (pipe/tty/stdin) - stale data is dropped on start */
 int input_is_live(const input *in);
 
