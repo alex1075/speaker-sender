@@ -58,7 +58,8 @@ Pushing a tag such as `v0.1.0` (`.github/workflows/release.yml`) builds everythi
 
 ## Plan
 - **Done** - Stage 0/AirPlay 2 proven from Python and C (transient pairing, encrypted RTSP, ChaCha20-Poly1305, PCM and ALAC).
-- **Next** - port the handshake to Kotlin (reuse the golden vectors in JVM tests), then capture test with the Pixel.
+- **Next** - AirPlay 1 (RAOP) sender in `c/` plus automatic AirPlay 1/2 detection from `/info` features and mDNS, so older receivers (Yamaha RX-V679) work.
+- **Then** - port the handshake to Kotlin (reuse the golden vectors in JVM tests), then capture test with the Pixel.
 - **Fallback** - Bluetooth A2DP into a Raspberry Pi, forwarded to speakers via the Python bridge.
 
 ## Known risks
