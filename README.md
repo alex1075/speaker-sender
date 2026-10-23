@@ -38,16 +38,17 @@ Download `airplay-sender-*-android-debug.apk` from the latest release and sidelo
 gradle -p android assembleDebug     # needs JDK 17 and Gradle >= 8.9; APK in android/app/build/outputs/apk/debug/
 ```
 
-## Tested speakers
+## Tested on
 
-| Speaker | Model | Format | Result |
-|---|---|---|---|
-| Office | Harman Kardon Citation One | PCM | Audible. Needs the timing responder running before SETUP |
-| Kitchen | Sonos Bookshelf (auto-detected from mDNS) | ALAC | Audible. Needs volume and progress sent before RECORD/FLUSH |
-| Bedroom | Apple HomePod (`AudioAccessory1,1`) | PCM | Audible (6 s tone at 50%) |
-| Living Room | Yamaha RX-V679 receiver | n/a | Not tested |
+| Area | Model | Format | Result |
+|:--|:--|:--:|:--|
+| Office | Harman Kardon Citation One | PCM | ✅ Works |
+| Kitchen | Sonos Bookshelf | ALAC | ✅ Works |
+| Bedroom | HomePod | PCM | ✅ Works |
+| Living Room | Yamaha RX-V679 | - | Not tested |
 
-Office, Kitchen and Bedroom also played together from the Python bridge; multi-room sync quality from the C tool is not yet measured.
+Quirks: the Harman Kardon needs the timing responder running before SETUP; Sonos needs volume and progress sent before RECORD/FLUSH.
+Multi-room sync from the C tool is not yet measured.
 
 ## CI and releases
 
