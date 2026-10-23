@@ -14,6 +14,17 @@ install -m 644 "$D/pi/bt-agent.service" /etc/systemd/system/bt-agent.service
 install -m 644 "$D/pi/bt-sink-setup.service" /etc/systemd/system/bt-sink-setup.service
 install -m 644 "$D/pi/bt-airplay-bridge.service" /etc/systemd/system/bt-airplay-bridge.service
 [ -f /etc/default/bt-airplay-bridge ] || install -m 644 "$D/pi/bt-airplay-bridge.default" /etc/default/bt-airplay-bridge
+# Advertise as an audio sink (class 0x240414: audio/video loudspeaker). Without this the Pi shows up as
+# "miscellaneous" (0x00440000) and transmitter-only devices such as the Sony turntable never list it.
+if grep -qE '^\s*Class\s*=' /etc/bluetooth/main.conf; then
+  sed -i -E 's/^\s*Class\s*=.*/Class = 0x240414/' /etc/bluetooth/main.conf
+elif grep -qE '^\s*#\s*Class\s*=' /etc/bluetooth/main.conf; then
+  sed -i -E '0,/^\s*#\s*Class\s*=.*/s//Class = 0x240414/' /etc/bluetooth/main.conf
+else
+  sed -i '/^\[General\]/a Class = 0x240414' /etc/bluetooth/main.conf
+fi
+echo "NOTE: restart bluetooth (or reboot) for the new Bluetooth class to apply - this drops any connected device."
+
 systemctl daemon-reload
 systemctl enable --now bluealsa.service bt-agent.service bt-sink-setup.service
 systemctl restart bluealsa.service
