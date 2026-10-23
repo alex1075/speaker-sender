@@ -17,14 +17,22 @@ uint64_t ap_now_ns(void)
 
 void ap_sleep_until_ns(uint64_t deadline)
 {
+#ifdef __linux__
     struct timespec ts;
     ts.tv_sec = (time_t)(deadline / 1000000000ull);
     ts.tv_nsec = (long)(deadline % 1000000000ull);
-#ifdef CLOCK_MONOTONIC
     while (clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &ts, NULL) != 0) {
-        /* interrupted by a signal: stop sleeping if it is already past */
-        if (ap_now_ns() >= deadline)
+        if (ap_now_ns() >= deadline) /* interrupted by a signal and already late */
             break;
+    }
+#else
+    for (;;) {
+        uint64_t now = ap_now_ns();
+        if (now >= deadline)
+            break;
+        uint64_t d = deadline - now;
+        struct timespec ts = {(time_t)(d / 1000000000ull), (long)(d % 1000000000ull)};
+        nanosleep(&ts, NULL);
     }
 #endif
 }

@@ -60,6 +60,7 @@ struct ap_session {
 
     volatile int stop;
     volatile int dead;
+    volatile int sync_ready;
     pthread_t th_net, th_keep;
     int net_started, keep_started;
 };
@@ -317,7 +318,7 @@ static void *net_thread(void *arg)
                 }
             }
         }
-        if (ap_now_ns() >= next_sync) {
+        if (s->sync_ready && ap_now_ns() >= next_sync) {
             pthread_mutex_lock(&s->lock);
             uint64_t sent = s->frames_sent;
             uint64_t ntp = s->ntp_start + (uint64_t)(((unsigned __int128)sent << 32) / AP_SAMPLE_RATE);
@@ -330,6 +331,8 @@ static void *net_thread(void *arg)
             next_sync += 1000000000ull;
             if (next_sync < ap_now_ns())
                 next_sync = ap_now_ns() + 1000000000ull;
+        } else if (!s->sync_ready) {
+            next_sync = ap_now_ns();
         }
     }
     return NULL;
@@ -467,6 +470,14 @@ ap_session *ap_session_open(const ap_target *t)
         AP_ERR("%s: cannot create UDP sockets: %s", t->name, strerror(errno));
         goto fail;
     }
+
+    s->seq = 0;
+    s->ntp_start = ap_ntp_now();
+    s->first_sync = 1;
+    s->first_packet = 1;
+    if (pthread_create(&s->th_net, NULL, net_thread, s))
+        goto fail;
+    s->net_started = 1;
 
     AP_LOG("%s: connecting to %s:%d%s", t->name, t->host, t->port, t->use_alac ? " (ALAC)" : "");
     if (rtsp_conn_open(&s->conn, t->host, t->port, 10000))
@@ -621,9 +632,7 @@ ap_session *ap_session_open(const ap_target *t)
     s->ntp_start = ap_ntp_now();
     s->first_packet = 1;
     s->first_sync = 1;
-    if (pthread_create(&s->th_net, NULL, net_thread, s))
-        goto fail;
-    s->net_started = 1;
+    s->sync_ready = 1;
 
     /* metadata (best effort) */
     {

@@ -5,7 +5,7 @@
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 CC      ?= cc
 CFLAGS  ?= -O2 -g
-CFLAGS  += -std=c11 -D_GNU_SOURCE -Wall -Wextra -Wshadow -DAP_VERSION='"$(VERSION)"'
+CFLAGS  += -std=c11 -D_GNU_SOURCE -Isrc -Wall -Wextra -Wshadow -DAP_VERSION='"$(VERSION)"'
 LDLIBS  += -lpthread -lm
 
 UNAME_S := $(shell uname -s)
@@ -42,7 +42,7 @@ all: airplay-send
 airplay-send: $(LIB_OBJ) src/main.o
 	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
-%.o: %.c $(wildcard src/*.h)
+%.o: %.c $(wildcard src/*.h) $(wildcard tests/*.h)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 tests/test_unit: tests/test_unit.o $(LIB_OBJ)
@@ -50,9 +50,6 @@ tests/test_unit: tests/test_unit.o $(LIB_OBJ)
 
 tests/test_mock: tests/test_mock.o $(LIB_OBJ)
 	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
-
-tests/%.o: tests/%.c $(wildcard src/*.h)
-	$(CC) $(CFLAGS) -Isrc -c -o $@ $<
 
 check: tests/test_unit tests/test_mock airplay-send
 	./tests/test_unit

@@ -270,6 +270,7 @@ int http_request(rtsp_conn *c, const char *method, const char *uri, const char *
                  const char *const *headers, const uint8_t *body, size_t body_len, http_resp *resp)
 {
     ap_buf msg, enc;
+    memset(resp, 0, sizeof(*resp)); /* callers free it even when the request fails */
     ap_buf_init(&msg);
     ap_buf_init(&enc);
     int have_ua = 0;
