@@ -93,4 +93,4 @@ MIT, see [LICENSE](LICENSE).
 
 ## AI Disclosure
 
-speaker-sender is designed, developed, and maintained by Alex Hunt. Anthropic's Claude AI was used as an assistant for parts of the implementation. All AI generated content was reviewed, edited and tested by the author on real AirPlay speakers (Harman Kardon, Sonos, HomePod) and against reference implementations (pyatv, srptools, cryptography). The author remains responsible for the submitted implementations and their correctness.
+speaker-sender is designed, developed, and maintained by Alex Hunt. Anthropic's Claude AI was used as an assistant for parts of the implementation. All AI generated content was reviewed, edited and tested by the author on real AirPlay speakers (Harman Kardon, Sonos, HomePod) and against reference implementations (pyatv, srptools, cryptography).
