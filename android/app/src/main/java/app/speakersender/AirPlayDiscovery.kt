@@ -1,4 +1,4 @@
-package app.airplaysender
+package app.speakersender
 
 import android.content.Context
 import android.net.nsd.NsdManager

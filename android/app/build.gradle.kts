@@ -4,10 +4,10 @@ plugins {
 }
 
 android {
-    namespace = "app.airplaysender"
+    namespace = "app.speakersender"
     compileSdk = 34
     defaultConfig {
-        applicationId = "app.airplaysender"
+        applicationId = "app.speakersender"
         minSdk = 29 // AudioPlaybackCapture needs API 29
         targetSdk = 34
         versionCode = 1

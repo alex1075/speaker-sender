@@ -1,4 +1,4 @@
-package app.airplaysender
+package app.speakersender
 
 import android.app.Notification
 import android.app.NotificationChannel

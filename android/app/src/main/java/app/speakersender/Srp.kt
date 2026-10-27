@@ -1,4 +1,4 @@
-package app.airplaysender
+package app.speakersender
 
 import java.math.BigInteger
 import java.security.MessageDigest

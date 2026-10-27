@@ -1,4 +1,4 @@
-package app.airplaysender
+package app.speakersender
 
 import java.time.Instant
 

@@ -1,4 +1,4 @@
-package app.airplaysender
+package app.speakersender
 
 /**
  * "Uncompressed ALAC" framing as in c/src/alac.c: a 23-bit header, the PCM bytes (big endian), then 3 end bits of 111,

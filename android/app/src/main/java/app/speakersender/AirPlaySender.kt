@@ -1,4 +1,4 @@
-package app.airplaysender
+package app.speakersender
 
 /**
  * The part that has to be written. Follow docs/protocol-notes.md; each step was verified against a real speaker with pyatv.

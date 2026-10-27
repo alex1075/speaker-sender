@@ -1,4 +1,4 @@
-package app.airplaysender
+package app.speakersender
 
 /** RTP audio, sync and timing packets, as the builders in c/src/airplay.c. Long carries unsigned 32/64-bit values. */
 object Packets {

@@ -1,4 +1,4 @@
-package app.airplaysender
+package app.speakersender
 
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals

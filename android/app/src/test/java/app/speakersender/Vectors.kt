@@ -1,4 +1,4 @@
-package app.airplaysender
+package app.speakersender
 
 // Generated from c/tests/vectors.h (same bytes, hex-encoded). Do not edit by hand.
 object Vectors {

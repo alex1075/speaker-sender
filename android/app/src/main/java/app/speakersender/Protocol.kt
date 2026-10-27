@@ -1,4 +1,4 @@
-package app.airplaysender
+package app.speakersender
 
 /** Pure protocol helpers shared in spirit with c/src/airplay.c (same rules, same test vectors). */
 object Protocol {

@@ -1,4 +1,4 @@
-package app.airplaysender
+package app.speakersender
 
 import java.io.ByteArrayOutputStream
 import javax.crypto.AEADBadTagException
