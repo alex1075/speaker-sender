@@ -51,7 +51,7 @@ jobs:
           python-version: '3.12'
       - name: Regenerate reference vectors with pyatv/srptools and compare
         run: |
-          pip install pyatv "srptools<2" cryptography
+          pip install pyatv==0.18.0 "srptools<2" cryptography
           python c/tools/gen_vectors.py > /tmp/vectors.h
           diff -u c/tests/vectors.h /tmp/vectors.h
 
