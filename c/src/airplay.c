@@ -684,7 +684,7 @@ ap_session *ap_session_open(const ap_target *t)
     bp_dict_set(d, "groupContainsGroupLeader", bp_bool(0));
     bp_dict_set(d, "macAddress", bp_str(FAKE_MAC));
     bp_dict_set(d, "model", bp_str("iPhone14,3"));
-    bp_dict_set(d, "name", bp_str("airplay-send"));
+    bp_dict_set(d, "name", bp_str("speaker-send"));
     bp_dict_set(d, "osBuildVersion", bp_str("20F66"));
     bp_dict_set(d, "osName", bp_str("iPhone OS"));
     bp_dict_set(d, "osVersion", bp_str("16.5"));
@@ -825,9 +825,9 @@ ap_session *ap_session_open(const ap_target *t)
         ap_buf pl, md;
         ap_buf_init(&pl);
         ap_buf_init(&md);
-        dmap_string(&pl, "minm", t->title ? t->title : "airplay-send");
-        dmap_string(&pl, "asal", t->album ? t->album : "airplay-send");
-        dmap_string(&pl, "asar", t->artist ? t->artist : "airplay-send");
+        dmap_string(&pl, "minm", t->title ? t->title : "speaker-send");
+        dmap_string(&pl, "asal", t->album ? t->album : "speaker-send");
+        dmap_string(&pl, "asar", t->artist ? t->artist : "speaker-send");
         uint8_t l4[4];
         ap_put_be32(l4, (uint32_t)pl.len);
         ap_buf_append(&md, "mlit", 4);

@@ -1,4 +1,4 @@
-airplay-send
+speaker-send
 *.o
 tests/test_unit
 tests/test_mock

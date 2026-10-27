@@ -25,9 +25,9 @@ static void on_signal(int sig)
 static void usage(FILE *out)
 {
     fprintf(out,
-            "airplay-send %s - stream audio to AirPlay 2 speakers (no Apple software needed)\n"
+            "speaker-send %s - stream audio to AirPlay 2 speakers (no Apple software needed)\n"
             "\n"
-            "usage: airplay-send [options] -t TARGET [-t TARGET ...] [FILE | -]\n"
+            "usage: speaker-send [options] -t TARGET [-t TARGET ...] [FILE | -]\n"
             "\n"
             "  FILE            WAV (16-bit stereo 44.1 kHz) or, with --raw, raw PCM; '-' or omitted = stdin\n"
             "                  stdin is raw signed 16-bit little endian, 44100 Hz, 2 channels\n"
@@ -49,10 +49,10 @@ static void usage(FILE *out)
             "      --version\n"
             "\n"
             "examples:\n"
-            "  airplay-send --list\n"
-            "  airplay-send -t Kitchen song.wav\n"
-            "  arecord -f cd -t raw | airplay-send -t Kitchen -t Bedroom=40\n"
-            "  ffmpeg -i radio.mp3 -f s16le -ar 44100 -ac 2 - | airplay-send -t 192.168.1.50\n",
+            "  speaker-send --list\n"
+            "  speaker-send -t Kitchen song.wav\n"
+            "  arecord -f cd -t raw | speaker-send -t Kitchen -t Bedroom=40\n"
+            "  ffmpeg -i radio.mp3 -f s16le -ar 44100 -ac 2 - | speaker-send -t 192.168.1.50\n",
             AP_VERSION);
 }
 
@@ -184,7 +184,7 @@ int main(int argc, char **argv)
             usage(stdout);
             return 0;
         case 1004:
-            printf("airplay-send %s\n", AP_VERSION);
+            printf("speaker-send %s\n", AP_VERSION);
             return 0;
         default:
             usage(stderr);

@@ -4,7 +4,7 @@ After=network-online.target
 Wants=network-online.target
 
 [Service]
-ExecStart=%h/airplay-sender/run-bridge.sh
+ExecStart=%h/speaker-sender/run-bridge.sh
 Restart=always
 RestartSec=5
 # SIGTERM cancels the main task, which kills the capture ssh (see the runner in bt_airplay_bridge.py)

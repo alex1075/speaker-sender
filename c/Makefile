@@ -1,4 +1,4 @@
-# airplay-send - build with `make`; needs a C11 compiler, pthreads and OpenSSL (libcrypto) headers.
+# speaker-send - build with `make`; needs a C11 compiler, pthreads and OpenSSL (libcrypto) headers.
 #   Debian/Ubuntu: sudo apt install build-essential libssl-dev     Fedora: sudo dnf install gcc make openssl-devel
 #   macOS:         brew install openssl                            (the Makefile picks up Homebrew's prefix)
 
@@ -37,9 +37,9 @@ LIB_SRC := src/util.c src/bplist.c src/tlv8.c src/crypto.c src/srp.c src/alac.c 
            src/airplay.c src/input.c src/stream.c
 LIB_OBJ := $(LIB_SRC:.c=.o)
 
-all: airplay-send
+all: speaker-send
 
-airplay-send: $(LIB_OBJ) src/main.o
+speaker-send: $(LIB_OBJ) src/main.o
 	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 %.o: %.c $(wildcard src/*.h) $(wildcard tests/*.h)
@@ -54,17 +54,17 @@ tests/test_mock: tests/test_mock.o $(LIB_OBJ)
 tests/test_ap1: tests/test_ap1.o $(LIB_OBJ)
 	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
-check: tests/test_unit tests/test_mock tests/test_ap1 airplay-send
+check: tests/test_unit tests/test_mock tests/test_ap1 speaker-send
 	./tests/test_unit
 	./tests/test_mock
 	./tests/test_ap1
-	./tests/test_cli.sh ./airplay-send
+	./tests/test_cli.sh ./speaker-send
 
-install: airplay-send
+install: speaker-send
 	install -d $(DESTDIR)$(PREFIX)/bin
-	install -m 755 airplay-send $(DESTDIR)$(PREFIX)/bin/airplay-send
+	install -m 755 speaker-send $(DESTDIR)$(PREFIX)/bin/speaker-send
 
 clean:
-	rm -f $(LIB_OBJ) src/main.o airplay-send tests/*.o tests/test_unit tests/test_mock tests/test_ap1
+	rm -f $(LIB_OBJ) src/main.o speaker-send tests/*.o tests/test_unit tests/test_mock tests/test_ap1
 
 .PHONY: all check install clean

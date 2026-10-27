@@ -12,5 +12,5 @@ dependencyResolutionManagement {
         mavenCentral()
     }
 }
-rootProject.name = "airplay-sender"
+rootProject.name = "speaker-sender"
 include(":app")

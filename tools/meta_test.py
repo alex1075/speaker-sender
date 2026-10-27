@@ -27,7 +27,7 @@ async def main(name, volume):
     atv = await pyatv.connect(conf, loop, storage=storage)
     try:
         await atv.audio.set_volume(volume)
-        md = MediaMetadata(title="Test Tone", artist="airplay-sender", album="Diagnostics", artwork=tiny_png(), duration=8.0)
+        md = MediaMetadata(title="Test Tone", artist="speaker-sender", album="Diagnostics", artwork=tiny_png(), duration=8.0)
         await atv.stream.stream_file(path, metadata=md)
         print("stream_file finished OK")
     finally:

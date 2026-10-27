@@ -1,4 +1,4 @@
-/* airplay-send - shared helpers */
+/* speaker-send - shared helpers */
 #ifndef AP_UTIL_H
 #define AP_UTIL_H
 
@@ -11,20 +11,20 @@ extern int ap_debug; /* 0 = quiet, 1 = info, 2 = debug */
 #define AP_LOG(...)                                                            \
     do {                                                                       \
         if (ap_debug >= 1) {                                                   \
-            fprintf(stderr, "airplay-send: " __VA_ARGS__);                     \
+            fprintf(stderr, "speaker-send: " __VA_ARGS__);                     \
             fputc('\n', stderr);                                               \
         }                                                                      \
     } while (0)
 #define AP_DBG(...)                                                            \
     do {                                                                       \
         if (ap_debug >= 2) {                                                   \
-            fprintf(stderr, "airplay-send[dbg]: " __VA_ARGS__);                \
+            fprintf(stderr, "speaker-send[dbg]: " __VA_ARGS__);                \
             fputc('\n', stderr);                                               \
         }                                                                      \
     } while (0)
 #define AP_ERR(...)                                                            \
     do {                                                                       \
-        fprintf(stderr, "airplay-send: error: " __VA_ARGS__);                  \
+        fprintf(stderr, "speaker-send: error: " __VA_ARGS__);                  \
         fputc('\n', stderr);                                                   \
     } while (0)
 

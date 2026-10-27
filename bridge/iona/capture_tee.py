@@ -2,10 +2,10 @@
 """Capture command for the Bluetooth bridge that also feeds an AirPlay 1 receiver.
 
 Runs capture-from-pi.sh and copies its raw S16_LE/44.1k/stereo output to stdout (for bt_airplay_bridge.py, which
-sends it to the AirPlay 2 speakers through pyatv) and to `airplay-send` (the C tool, which detects AirPlay 1),
-for speakers that pyatv's AirPlay 2 path cannot use. The copy never blocks the bridge: if airplay-send is slow or
+sends it to the AirPlay 2 speakers through pyatv) and to `speaker-send` (the C tool, which detects AirPlay 1),
+for speakers that pyatv's AirPlay 2 path cannot use. The copy never blocks the bridge: if speaker-send is slow or
 dies, whole 4096-byte blocks (a multiple of the 4-byte stereo frame) are dropped for it and the bridge carries on.
-Usage: capture_tee.py "Living Room=30" ["Other=40" ...]   (extra targets use airplay-send's -t syntax)
+Usage: capture_tee.py "Living Room=30" ["Other=40" ...]   (extra targets use speaker-send's -t syntax)
 """
 import os
 import signal
@@ -34,10 +34,10 @@ procs.append(cap)
 sender = None
 sfd = -1
 if targets:
-    cmd = [os.path.join(HERE, "airplay-send"), "--scan", "6000"]
+    cmd = [os.path.join(HERE, "speaker-send"), "--scan", "6000"]
     for t in targets:
         cmd += ["-t", t]
-    log = open("/tmp/airplay-send-extra.log", "ab")
+    log = open("/tmp/speaker-send-extra.log", "ab")
     sender = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=log, stderr=log)
     procs.append(sender)
     sfd = sender.stdin.fileno()
@@ -67,7 +67,7 @@ try:
                 break
             pending = pending[BLOCK:]
         if len(pending) > MAX_PENDING:
-            # airplay-send is not keeping up: drop the oldest audio, starting on a stereo frame boundary
+            # speaker-send is not keeping up: drop the oldest audio, starting on a stereo frame boundary
             start = (len(pending) - MAX_PENDING // 2 + 3) // 4 * 4
             pending = pending[start:]
 finally:

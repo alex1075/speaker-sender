@@ -19,9 +19,9 @@ data class Target(
     val useAlac: Boolean = false,
     val volumePct: Double = 0.0,
     val pin: String = "3939",
-    val title: String = "airplay-send",
-    val artist: String = "airplay-send",
-    val album: String = "airplay-send",
+    val title: String = "speaker-send",
+    val artist: String = "speaker-send",
+    val album: String = "speaker-send",
     val durationS: Double = 0.0,
 )
 
@@ -175,7 +175,7 @@ class AirPlaySession private constructor(private val t: Target) : Closeable {
                 "groupContainsGroupLeader" to false,
                 "macAddress" to FAKE_MAC,
                 "model" to "iPhone14,3",
-                "name" to "airplay-send",
+                "name" to "speaker-send",
                 "osBuildVersion" to "20F66",
                 "osName" to "iPhone OS",
                 "osVersion" to "16.5",

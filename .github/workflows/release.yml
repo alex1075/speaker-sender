@@ -1,6 +1,6 @@
 name: release
 
-# Push a tag like v0.1.0: builds the static Linux/macOS airplay-send binaries and the Android APK,
+# Push a tag like v0.1.0: builds the static Linux/macOS speaker-send binaries and the Android APK,
 # and publishes them together as one GitHub release.
 on:
   push:
@@ -29,13 +29,13 @@ jobs:
             git config --global --add safe.directory /src &&
             make STATIC=full VERSION=${{ github.ref_name }} &&
             make STATIC=full VERSION=${{ github.ref_name }} check &&
-            strip airplay-send'
-          ./c/airplay-send --version
+            strip speaker-send'
+          ./c/speaker-send --version
       - name: Package
         run: |
-          name=airplay-send-${{ github.ref_name }}-linux-${{ matrix.arch }}
+          name=speaker-send-${{ github.ref_name }}-linux-${{ matrix.arch }}
           mkdir -p dist/$name
-          cp c/airplay-send c/README.md dist/$name/
+          cp c/speaker-send c/README.md dist/$name/
           tar -C dist -czf dist/$name.tar.gz $name
           (cd dist && sha256sum $name.tar.gz > $name.tar.gz.sha256)
       - uses: actions/upload-artifact@v4
@@ -53,13 +53,13 @@ jobs:
         run: |
           make STATIC=1 VERSION=${{ github.ref_name }}
           make STATIC=1 VERSION=${{ github.ref_name }} check
-          strip airplay-send
-          ./airplay-send --version
+          strip speaker-send
+          ./speaker-send --version
       - name: Package
         run: |
-          name=airplay-send-${{ github.ref_name }}-macos-arm64
+          name=speaker-send-${{ github.ref_name }}-macos-arm64
           mkdir -p dist/$name
-          cp c/airplay-send c/README.md dist/$name/
+          cp c/speaker-send c/README.md dist/$name/
           tar -C dist -czf dist/$name.tar.gz $name
           (cd dist && shasum -a 256 $name.tar.gz > $name.tar.gz.sha256)
       - uses: actions/upload-artifact@v4
@@ -82,8 +82,8 @@ jobs:
         run: |
           gradle -p android testDebugUnitTest assembleDebug --no-daemon
           mkdir -p dist
-          cp android/app/build/outputs/apk/debug/app-debug.apk dist/airplay-sender-${{ github.ref_name }}-android-debug.apk
-          (cd dist && sha256sum *.apk > airplay-sender-${{ github.ref_name }}-android-debug.apk.sha256)
+          cp android/app/build/outputs/apk/debug/app-debug.apk dist/speaker-sender-${{ github.ref_name }}-android-debug.apk
+          (cd dist && sha256sum *.apk > speaker-sender-${{ github.ref_name }}-android-debug.apk.sha256)
       - uses: actions/upload-artifact@v4
         with:
           name: android

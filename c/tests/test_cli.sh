@@ -1,13 +1,13 @@
 #!/bin/sh
 # Command line tests: usage errors, and an end-to-end run through the real binary against the mock receiver.
-BIN=${1:-./airplay-send}
+BIN=${1:-./speaker-send}
 MOCK=./tests/test_mock
 fails=0
 ok() { echo "ok   $1"; }
 bad() { echo "FAIL $1"; fails=$((fails+1)); }
 
 $BIN --help >/dev/null 2>&1 && ok "--help exits 0" || bad "--help exits 0"
-$BIN --version 2>&1 | grep -q airplay-send && ok "--version" || bad "--version"
+$BIN --version 2>&1 | grep -q speaker-send && ok "--version" || bad "--version"
 $BIN </dev/null >/dev/null 2>&1; [ $? -eq 2 ] && ok "no target is a usage error" || bad "no target is a usage error"
 $BIN -t 127.0.0.1:1 -V 500 --tone 1 >/dev/null 2>&1; [ $? -eq 2 ] && ok "bad volume rejected" || bad "bad volume rejected"
 $BIN -t 127.0.0.1:1 --tone 1 2>err.txt >/dev/null; rc=$?

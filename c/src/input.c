@@ -181,7 +181,7 @@ static int parse_wav(input *in)
                 fmt = rd_le16(f + 24); /* WAVE_FORMAT_EXTENSIBLE sub format */
             if (fmt != 1 || chans != 2 || bits != 16 || rate != AP_SAMPLE_RATE) {
                 AP_ERR("WAV must be 16-bit stereo PCM at 44100 Hz (got fmt=%u, %u ch, %u bit, %u Hz).\n"
-                       "  convert with: ffmpeg -i in.ext -f s16le -ar 44100 -ac 2 - | airplay-send -t NAME",
+                       "  convert with: ffmpeg -i in.ext -f s16le -ar 44100 -ac 2 - | speaker-send -t NAME",
                        fmt, chans, bits, rate);
                 return -1;
             }

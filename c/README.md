@@ -1,15 +1,15 @@
-# airplay-send
+# speaker-send
 
 A small command-line AirPlay 1 and AirPlay 2 sender for Linux (and macOS), written in plain C. It plays audio on
 AirPlay speakers (HomePod, Sonos, Harman Kardon, ...) from anything that can write PCM to a pipe -
 no Apple hardware or software involved.
 
 ```sh
-airplay-send --list                                   # find speakers
-airplay-send -t Speaker1 song.wav                      # play a WAV file
-arecord -f cd -t raw | airplay-send -t Speaker1        # live capture from a sound card / line-in
-ffmpeg -i radio.mp3 -f s16le -ar 44100 -ac 2 - | airplay-send -t Speaker1 -t Speaker2=40
-airplay-send --tone 3 -t 192.168.1.50                 # 3 s test tone, speaker by IP
+speaker-send --list                                   # find speakers
+speaker-send -t Speaker1 song.wav                      # play a WAV file
+arecord -f cd -t raw | speaker-send -t Speaker1        # live capture from a sound card / line-in
+ffmpeg -i radio.mp3 -f s16le -ar 44100 -ac 2 - | speaker-send -t Speaker1 -t Speaker2=40
+speaker-send --tone 3 -t 192.168.1.50                 # 3 s test tone, speaker by IP
 ```
 
 `-t` can be repeated to play on several rooms at once; `NAME=40` sets that speaker's volume (1-100).
@@ -20,15 +20,15 @@ Names are matched case-insensitively against the mDNS name (unique prefix or sub
 **Download a release** (static binaries for Linux x86_64 / aarch64 and macOS arm64, with `SHA256SUMS`):
 
 ```sh
-gh release download --repo alex1075/airplay-send --pattern 'airplay-send-*-linux-x86_64.tar.gz'
-tar xzf airplay-send-*-linux-x86_64.tar.gz
-./airplay-send-*/airplay-send --version
+gh release download --repo alex1075/speaker-send --pattern 'speaker-send-*-linux-x86_64.tar.gz'
+tar xzf speaker-send-*-linux-x86_64.tar.gz
+./speaker-send-*/speaker-send --version
 ```
 
 **Or build from a clone** - needs a C11 compiler, `make` and OpenSSL's libcrypto headers:
 
 ```sh
-git clone https://github.com/alex1075/airplay-send.git && cd airplay-send
+git clone https://github.com/alex1075/speaker-send.git && cd speaker-send
 sudo apt install build-essential libssl-dev     # Fedora: sudo dnf install gcc make openssl-devel
 make                                            # macOS: brew install openssl, then make
 make check                                      # run all tests
@@ -67,7 +67,7 @@ no user interaction), ChaCha20-Poly1305 encrypted RTSP and event channels, a rea
   packets, so rooms can drift by tens of milliseconds.
 
 The Python reference this was ported from and the protocol notes are in the
-[airplay-sender](https://github.com/alex1075/airplay-sender) repository (`docs/protocol-notes.md`).
+[speaker-sender](https://github.com/alex1075/speaker-sender) repository (`docs/protocol-notes.md`).
 
 ## Tests
 

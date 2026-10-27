@@ -6,7 +6,7 @@ Requires=bluealsa.service
 
 [Service]
 EnvironmentFile=/etc/default/bt-airplay-bridge
-ExecStart=/root/airplay-venv/bin/python -u /root/airplay-sender/bt_airplay_bridge.py --target "${TARGET}" --volume ${VOLUME}
+ExecStart=/root/airplay-venv/bin/python -u /root/speaker-sender/bt_airplay_bridge.py --target "${TARGET}" --volume ${VOLUME}
 Restart=always
 RestartSec=10
 

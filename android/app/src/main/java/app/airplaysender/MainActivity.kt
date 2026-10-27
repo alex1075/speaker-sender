@@ -9,7 +9,7 @@ class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val text = TextView(this).apply {
-            text = "airplay-sender\n\nThe AirPlay handshake is not ported to Kotlin yet."
+            text = "speaker-sender\n\nThe AirPlay handshake is not ported to Kotlin yet."
             textSize = 18f
             setPadding(48, 96, 48, 48)
         }

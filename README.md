@@ -1,4 +1,6 @@
-# airplay-sender
+# speaker-sender
+
+Not affiliated with or endorsed by Apple Inc. AirPlay is a trademark of Apple Inc.; it is used here only to describe compatibility. This project plays audio only and does not handle FairPlay-protected content.
 
 Send audio from a GrapheneOS/Android phone, or any Linux box, to AirPlay speakers without Apple hardware or software.
 
@@ -6,7 +8,7 @@ One repo, two products, one CI:
 
 | Path | What | Status |
 |---|---|---|
-| `c/` | `airplay-send`, an AirPlay 1 and 2 command-line sender in plain C (Linux, macOS) | Working: verified on Harman Kardon Citation One, Sonos Bookshelf and HomePod |
+| `c/` | `speaker-send`, an AirPlay 1 and 2 command-line sender in plain C (Linux, macOS) | Working: verified on Harman Kardon Citation One, Sonos Bookshelf and HomePod |
 | `android/` | Android app (Kotlin, AudioPlaybackCapture foreground service) | Scaffold, handshake port not done yet |
 | `bridge/` | Bluetooth A2DP to AirPlay bridge (Pi receiver + pyatv sender), see below | Working: turntable to three speakers |
 | `docs/` | Protocol notes | |
@@ -16,14 +18,14 @@ One repo, two products, one CI:
 Download a release (static binaries for Linux x86_64/aarch64 and macOS arm64, plus the debug-signed Android APK and `SHA256SUMS`):
 
 ```sh
-gh release download --repo alex1075/airplay-sender --pattern 'airplay-send-*-linux-x86_64.tar.gz'
-tar xzf airplay-send-*-linux-x86_64.tar.gz && ./airplay-send-*/airplay-send --list
+gh release download --repo alex1075/speaker-sender --pattern 'speaker-send-*-linux-x86_64.tar.gz'
+tar xzf speaker-send-*-linux-x86_64.tar.gz && ./speaker-send-*/speaker-send --list
 ```
 
 Or build from a clone (C11 compiler, `make`, OpenSSL headers):
 
 ```sh
-git clone https://github.com/alex1075/airplay-sender.git && cd airplay-sender/c
+git clone https://github.com/alex1075/speaker-sender.git && cd speaker-sender/c
 sudo apt install build-essential libssl-dev    # macOS: brew install openssl@3
 make && make check
 ```
@@ -46,7 +48,7 @@ replaces the Python sender where a pipe of PCM is enough; the bridge is the Blue
 
 ## Get the Android app
 
-Download `airplay-sender-*-android-debug.apk` from the latest release and sideload it, or build it:
+Download `speaker-sender-*-android-debug.apk` from the latest release and sideload it, or build it:
 
 ```sh
 gradle -p android assembleDebug     # needs JDK 17 and Gradle >= 8.9; APK in android/app/build/outputs/apk/debug/
@@ -81,10 +83,14 @@ Pushing a tag such as `v0.1.0` (`.github/workflows/release.yml`) builds everythi
 - No cross-room clock correction beyond shared sync packets; rooms can drift by tens of milliseconds.
 
 ## References
-- https://pyatv.dev/
+- https://pyatv.dev/ (MIT): the protocol sequence was worked out from its debug logs and source; golden test vectors are generated with it
 - https://github.com/mikebrady/shairport-sync
 - https://developer.android.com/media/platform/av-capture
 
+## License
+
+MIT, see [LICENSE](LICENSE).
+
 ## AI Disclosure
 
-airplay-sender is designed, developed, and maintained by Alex Hunt. Anthropic's Claude AI was used as an assistant for parts of the implementation. All AI generated content was reviewed, edited and tested by the author on real AirPlay speakers (Harman Kardon, Sonos, HomePod) and against reference implementations (pyatv, srptools, cryptography). The author remains responsible for the submitted implementations and their correctness.
+speaker-sender is designed, developed, and maintained by Alex Hunt. Anthropic's Claude AI was used as an assistant for parts of the implementation. All AI generated content was reviewed, edited and tested by the author on real AirPlay speakers (Harman Kardon, Sonos, HomePod) and against reference implementations (pyatv, srptools, cryptography). The author remains responsible for the submitted implementations and their correctness.
