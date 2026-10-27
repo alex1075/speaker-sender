@@ -9,7 +9,7 @@ One repo, two products, one CI:
 | Path | What | Status |
 |---|---|---|
 | `c/` | `speaker-send`, an AirPlay 1 and 2 command-line sender in plain C (Linux, macOS) | Working: verified on Harman Kardon Citation One, Sonos Bookshelf and HomePod |
-| `android/` | Android app (Kotlin, AudioPlaybackCapture foreground service) | Scaffold, handshake port not done yet |
+| `android/` | Android app (Kotlin, AudioPlaybackCapture foreground service) | Protocol stack ported to Kotlin and unit-tested against a mock receiver; speaker picker and capture are not wired up yet, not run on a phone |
 | `bridge/` | Bluetooth A2DP to AirPlay bridge (Pi receiver + pyatv sender), see below | Working: turntable to three speakers |
 | `docs/` | Protocol notes | |
 
@@ -75,7 +75,8 @@ Pushing a tag such as `v0.1.0` (`.github/workflows/release.yml`) builds everythi
 ## Plan
 - **Done** - Stage 0/AirPlay 2 proven from Python and C (transient pairing, encrypted RTSP, ChaCha20-Poly1305, PCM and ALAC).
 - **Done** - AirPlay 1 (RAOP) sender in `c/` with automatic AirPlay 1/2 detection (Yamaha RX-V679 verified).
-- **Next** - port the handshake to Kotlin (reuse the golden vectors in JVM tests), then capture test with the Pixel.
+- **Done** - AirPlay 2 session, pairing, RTSP and RTP ported to Kotlin with JVM tests (golden vectors and a mock receiver).
+- **Next** - wire the session to the speaker picker and the capture service, then test on a phone against real speakers.
 - **Fallback** - Bluetooth A2DP into a Raspberry Pi, forwarded to speakers via the Python bridge.
 
 ## Known risks
